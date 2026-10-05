@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATURSAN — Associação Turística de Sananduva</title>
+  <meta name="description" content="ATURSAN — Associação Turística de Sananduva/RS. Descubra, viva e encante-se com a cidade da árvore sananduva.">
+  <meta property="og:title" content="ATURSAN — Associação Turística de Sananduva">
+  <meta property="og:description" content="Descubra • Viva • Encante-se. Conheça os atrativos de Sananduva/RS.">
+  <meta property="og:image" content="https://juliozambonin.github.io/atursan/assets/img/logo-atursan.png">
+  <!-- Versão de avaliação: remover ao publicar no domínio definitivo -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="assets/img/logo-atursan.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="topbar" id="topbar">
+    <a class="brand" href="#inicio" aria-label="ATURSAN — início">
+      <img src="assets/img/logo-atursan.png" alt="">
+      <span>ATURSAN</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav" id="nav">
+      <a href="#explore">Explore</a>
+      <a href="#atrativos">Atrativos</a>
+      <a href="#arvore">A árvore</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#associe" class="nav-cta">Associe-se</a>
+    </nav>
+  </header>
+
+  <!-- ===== HERO: logo animado ===== -->
+  <section class="hero" id="inicio">
+    <div class="hero-petals" id="heroPetals" aria-hidden="true"></div>
+    <svg id="logo" class="logo" viewBox="0 0 640 640" role="img"
+         aria-label="Logo da ATURSAN — Associação Turística de Sananduva: árvore sananduva florida sobre colinas, com a igreja ao fundo. Descubra, viva, encante-se."></svg>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#explore">Explorar a cidade</a>
+      <a class="btn btn-ghost" href="#atrativos">Ver atrativos</a>
+    </div>
+    <a class="scroll-cue" href="#explore" aria-label="Rolar para explorar">
+      <span></span>
+    </a>
+  </section>
+
+  <!-- ===== MICRO CIDADE ANIMADA ===== -->
+  <section class="explore" id="explore">
+    <div class="section-head">
+      <p class="eyebrow">Mapa vivo</p>
+      <h2>Explore Sananduva</h2>
+      <p class="lead">Sobrevoe a nossa micro Sananduva, da cidade ao interior, e toque nos marcadores para conhecer cada atrativo.</p>
+    </div>
+    <div class="scene-wrap" id="sceneWrap">
+      <svg id="scene" class="scene" viewBox="0 0 2700 1700" role="img"
+           aria-label="Vista aérea animada de Sananduva: a cidade com a Igreja Matriz, a Majestade, a Vicato, o Pipino's e a praça; e o interior com a Vivaflor, o Camping Kaskata, o Espaço Ágape, o Belusso Steak House, a Pousada Angico, o Dallas Animal, o Sítio Moterle, a Fazenda Fracasso e a Flora."></svg>
+      <div class="map-ctrl" aria-label="Controles do mapa">
+        <button id="zoomIn" aria-label="Aproximar">+</button>
+        <button id="zoomOut" aria-label="Afastar">−</button>
+        <button id="zoomReset" aria-label="Ver a cidade inteira">⤢</button>
+      </div>
+    </div>
+    <p class="scene-hint">Arraste para passear · use + e − para aproximar · toque nos marcadores</p>
+  </section>
+
+  <!-- ===== ATRATIVOS ===== -->
+  <section class="atrativos" id="atrativos">
+    <div class="section-head">
+      <p class="eyebrow">Descubra</p>
+      <h2>Atrativos</h2>
+      <p class="lead">Lugares, sabores e experiências que fazem de Sananduva um destino para voltar sempre.</p>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- ===== A ÁRVORE ===== -->
+  <section class="arvore" id="arvore">
+    <div class="arvore-grid">
+      <div class="arvore-text">
+        <p class="eyebrow">Nossa identidade</p>
+        <h2>A árvore que dá nome à cidade</h2>
+        <p>A <strong>sananduva</strong> é a árvore de flores vermelhas intensas que batiza o município e
+          está no centro do nosso logo. Quando floresce, colore praças, estradas e o interior de vermelho —
+          um convite para parar, olhar e fotografar.</p>
+        <p>Ela representa o que a ATURSAN quer mostrar ao visitante: raízes fortes, gente acolhedora e
+          uma cidade que floresce junto com quem chega.</p>
+      </div>
+      <div class="arvore-photos">
+        <figure class="ph ph-1"><img src="assets/img/flor-sananduva.webp" alt="Flores vermelhas da árvore sananduva em close" loading="lazy"></figure>
+        <figure class="ph ph-2"><img src="assets/img/arvore-sananduva.webp" alt="Copa da árvore sananduva florida" loading="lazy"></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SOBRE ===== -->
+  <section class="sobre" id="sobre">
+    <div class="section-head">
+      <p class="eyebrow">Quem somos</p>
+      <h2>Associação Turística de Sananduva</h2>
+    </div>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-icon" aria-hidden="true">🧭</div>
+        <h3>Descubra</h3>
+        <p>Organizamos os estabelecimentos e atrativos turísticos do município para que o visitante encontre tudo em um só lugar.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" aria-hidden="true">🌿</div>
+        <h3>Viva</h3>
+        <p>Roteiros que unem a cidade e o interior: gastronomia, natureza, fé, indústria e tradição gaúcha.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" aria-hidden="true">❤️</div>
+        <h3>Encante-se</h3>
+        <p>Movimentar o comércio local e trazer gente de outras cidades para conhecer — e se apaixonar por — Sananduva.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ASSOCIE-SE ===== -->
+  <section class="associe" id="associe">
+    <div class="associe-box">
+      <h2>Seu estabelecimento quer fazer parte?</h2>
+      <p>Restaurantes, cafés, pousadas, espaços de eventos, produtores e atrativos do interior: venha somar com a ATURSAN.</p>
+      <p class="associe-note">Canais de contato em breve.</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <img src="assets/img/logo-atursan.png" alt="Logo ATURSAN" loading="lazy">
+    <p class="tagline">Descubra <span>•</span> Viva <span>•</span> Encante-se</p>
+    <p class="small">ATURSAN — Associação Turística de Sananduva · Sananduva/RS</p>
+  </footer>
+
+  <!-- ===== MODAL DOS ATRATIVOS ===== -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" data-close aria-label="Fechar">×</button>
+      <div class="modal-media" id="modalMedia"></div>
+      <div class="modal-body">
+        <p class="modal-tag" id="modalTag"></p>
+        <h3 id="modalTitle"></h3>
+        <p id="modalText"></p>
+        <button class="btn btn-primary modal-map" id="modalMap">📍 Ver no mapa</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/logo.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

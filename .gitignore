@@ -1,0 +1,10 @@
+.claude/
+.env
+node_modules/
+*.zip
+*.dwg
+*.dxf
+*.xlsx
+*.xls
+Thumbs.db
+desktop.ini
