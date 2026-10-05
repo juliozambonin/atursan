@@ -35,6 +35,40 @@
   const fr = (xF, y, z) => { const p = P(xF, y, z); return `matrix(${MIR ? -1 : 1},-0.5,0,1,${f(p[0])},${f(p[1])})`; };
   const visible = (x, y, m = 80) => { const [sx, sy] = P(x, y); return sx > -m && sx < W + m && sy > 330 && sy < H + m + 60; };
 
+  // cores em HSL, para as paletas dos temas
+  function toHsl(hex) {
+    const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    if (!d) return [0, 0, l];
+    const s = d / (1 - Math.abs(2 * l - 1));
+    const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+  }
+  function fromHsl(h, s, l) {
+    s = Math.max(0, Math.min(1, s)); l = Math.max(0, Math.min(1, l)); h = ((h % 360) + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+    const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return '#' + [r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
+  }
+  // chão por tema: no outono tudo mais pálido e os verdes puxando para o amarelo; no inverno, geada nos campos
+  function groundColor(c) {
+    const [h, s, l] = toHsl(c);
+    if (INVERNO && h > 44 && h < 170 && s > .1) return fromHsl(195, .22, .86 + l * .06);
+    if (OUTONO) return fromHsl(h > 60 && h < 170 ? h + (50 - h) * .45 : h, s * .6, l + (1 - l) * .1);
+    return c;
+  }
+  const themeGround = str => (OUTONO || INVERNO) ? str.replace(/#[0-9a-fA-F]{6}(?![0-9a-zA-Z])/g, groundColor) : str;
+  // copas: amareladas e avermelhadas no outono (em sequência fixa, sem sorteio), um pouco apagadas no inverno
+  const AUTUMN = ['#d9a43a', '#c8642d', '#e2b84a', '#b5452a', '#cf8a35', '#a86a2f', '#e0973a'];
+  let autumnN = 0;
+  function leaf(c) {
+    const [h, s, l] = toHsl(c);
+    if (h < 70 || h > 170) return c; // copas floridas (rosa, amarelo) ficam como estão
+    if (OUTONO) return AUTUMN[autumnN++ % AUTUMN.length];
+    if (INVERNO) return fromHsl(h, s * .7, l * .95);
+    return c;
+  }
+
   function shade(hex, k) {
     const n = parseInt(hex.slice(1), 16);
     const ch = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(k < 1 ? v * k : v + (255 - v) * (k - 1)))));
@@ -48,6 +82,18 @@
   const PET = ['#e3241b', '#ef3b24', '#c81812', '#f25a2c'];
   const PS = .5; // escala das pessoas
   const DATA = Object.fromEntries((window.ATRATIVOS || []).map(d => [d.id, d]));
+
+  // tema do site (js/temas.js): estação do ano e datas festivas. Verão é o visual padrão.
+  const TEMA = window.TEMA || { id: 'verao', e: id => id === 'verao' };
+  const NATAL = TEMA.e('natal'), PASCOA = TEMA.e('pascoa'), PRIMAVERA = TEMA.e('primavera'), OUTONO = TEMA.e('outono'), INVERNO = TEMA.e('inverno');
+  // As decorações dos temas sorteiam com outra sequência: assim árvores, casas e cores do mapa
+  // ficam no mesmo lugar em todos os temas (o mapa principal continua usando a sequência de sempre).
+  let tseed = 4242, altOn = false;
+  function alt(fn) {
+    if (altOn) return fn();
+    const s0 = seed; seed = tseed; altOn = true;
+    try { return fn(); } finally { tseed = seed; seed = s0; altOn = false; }
+  }
 
   let defs = '';
   let gid = 0;
@@ -133,9 +179,13 @@
   // ==================================================================
   const shadowE = (rx, ry = rx * .42) => `<ellipse rx="${rx}" ry="${f(ry)}" fill="#1d2b12" opacity=".16"/>`;
 
+  const SPRING = ['#f4a6c6', '#ffffff', '#f7d64a', '#e84393', '#fbc7d4', '#f39c12'];
   function treeS(s = 1, c = '#5e9a3c', o = {}) {
+    c = leaf(c);
     const dk = shade(c, .78), lt = shade(c, 1.15);
-    const blossom = o.blossom ? Array.from({ length: 14 }, () => `<circle cx="${f(rr(-15, 15))}" cy="${f(rr(-48, -20))}" r="${f(rr(1.2, 2.4))}" fill="${o.blossom}"/>`).join('') : '';
+    let blossom = o.blossom ? Array.from({ length: 14 }, () => `<circle cx="${f(rr(-15, 15))}" cy="${f(rr(-48, -20))}" r="${f(rr(1.2, 2.4))}" fill="${o.blossom}"/>`).join('') : '';
+    // primavera: toda árvore florida (sorteio à parte, para não mudar o mapa)
+    if (PRIMAVERA && !o.blossom) blossom = alt(() => { const fc = pick(SPRING); return Array.from({ length: 16 }, () => `<circle cx="${f(rr(-16, 16))}" cy="${f(rr(-50, -19))}" r="${f(rr(1.3, 2.5))}" fill="${fc}"/>`).join(''); });
     const st = neg(4); // sempre sorteia, para manter o mesmo mapa
     return `<g transform="scale(${s})">${shadowE(15)}<g${o.sway ? ` class="sway" style="${st}"` : ''}>
       <path d="M-2.6,0 L-1.8,-22 L1.8,-22 L2.6,0Z" fill="#6b4a2b"/>
@@ -204,6 +254,17 @@
     return `<g transform="scale(${s})">${shadowE(60, 22)}<g class="sway" style="animation-duration:5s">${br}${fl2}</g></g>`;
   }
 
+  // inverno: casaco, cachecol e touca (cores tiradas da cor da camisa, sem sorteio)
+  const WARM = ['#c0392b', '#2e6fb5', '#e0b12f', '#7d3c98', '#e67e22', '#1e8449', '#f4f1ea', '#8e2f24'];
+  function warmCols(shirt) { const k = (parseInt(shirt.slice(1), 16) || 0) % WARM.length; return [WARM[k], WARM[(k + 3) % WARM.length]]; }
+  const coat = (shirt, yt, hh) => `<rect x="-5.4" y="${yt - .5}" width="10.8" height="${hh}" rx="3.2" fill="${shade(shirt, .72)}"/><path d="M0,${yt + 1} V${yt + hh - 2}" stroke="${shade(shirt, .55)}" stroke-width=".7"/>`;
+  function scarfCap(shirt, yt, hy, cap) {
+    const [sc, tc] = warmCols(shirt);
+    let t = `<path d="M-4.6,${yt + 1} Q0,${yt + 3.2} 4.6,${yt + 1}" stroke="${sc}" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M2.6,${yt + 2} l1.4,6" stroke="${sc}" stroke-width="2.2" stroke-linecap="round"/>`;
+    if (cap) t += `<path d="M-5.2,${hy - .4} A5.2,5.2 0 0 1 5.2,${hy - .4}Z" fill="${tc}"/><rect x="-5.5" y="${hy - 1.6}" width="11" height="2.2" rx="1.1" fill="${shade(tc, .8)}"/><circle cy="${hy - 5.8}" r="1.7" fill="#fff"/>`;
+    return t;
+  }
+
   // pessoa de perfil, pés em (0,0), ~34 de altura (use escala PS)
   function person(o = {}) {
     const shirt = o.shirt || pick(SHIRTS), pants = o.pants || pick(PANTS);
@@ -214,12 +275,14 @@
     s += `<g class="${walk ? 'leg-b' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="3.6" stroke-linecap="round"/></g>`;
     s += `<g class="${walk ? 'walk-bob' : ''}" style="${d}">`;
     s += o.dress ? `<path d="M-4,-26 L4,-26 L7.5,-9 L-7.5,-9Z" fill="${shirt}"/>` : `<rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="${shirt}"/>`;
+    if (INVERNO) s += coat(shirt, -26, o.dress ? 17.5 : 16.5);
     if (o.apron) s += `<rect x="-1" y="-22" width="6" height="12" rx="1" fill="#fff"/>`;
     s += `<circle cx="0" cy="-30.5" r="4.8" fill="${skin}"/>`;
     s += o.long
       ? `<path d="M-5,-31 A5,5 0 0 1 5,-32 Q1,-34 -2,-31 Q-3,-27 -1,-22 L-5.5,-23 Q-6.5,-28 -5,-31Z" fill="${hair}"/>`
       : `<path d="M-5,-30.5 A5,5 0 0 1 5,-32 Q1,-34.5 -3,-32 Q-4.5,-30.5 -3.5,-28.5 L-5.2,-28.5Z" fill="${hair}"/>`;
     if (o.hat) s += `<ellipse cx="0" cy="-34" rx="8" ry="1.6" fill="${o.hat}"/><rect x="-4.5" y="-39" width="9" height="5" rx="2" fill="${o.hat}"/>`;
+    if (INVERNO) s += scarfCap(shirt, -26, -30.5, !o.hat && !o.veil);
     if (o.veil) s += `<path d="M-3,-35 Q-12,-22 -9,-8 L-3,-10Z" fill="#fff" opacity=".85"/>`;
     if (o.carry) {
       s += `<path d="M0,-22 L8,-17" stroke="${skin}" stroke-width="2.6" stroke-linecap="round"/>`;
@@ -238,9 +301,9 @@
     const shirt = o.shirt || pick(SHIRTS), pants = o.pants || pick(PANTS);
     const skin = o.skin || pick(SKINS), hair = o.hair || pick(HAIRS);
     return `<path d="M0,-10 L7,-10 L7,0" stroke="${pants}" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="-4.5" y="-24" width="9" height="15" rx="3" fill="${shirt}"/><path d="M1,-20 L8,-15" stroke="${skin}" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="-4.5" y="-24" width="9" height="15" rx="3" fill="${shirt}"/>${INVERNO ? coat(shirt, -24, 15.5) : ''}<path d="M1,-20 L8,-15" stroke="${skin}" stroke-width="2.6" stroke-linecap="round"/>
       <circle cx="0" cy="-28.5" r="4.8" fill="${skin}"/>
-      ${o.long ? `<path d="M-5,-29 A5,5 0 0 1 5,-30 Q1,-32 -2,-29 Q-3,-25 -1,-20 L-5.5,-21 Q-6.5,-26 -5,-29Z" fill="${hair}"/>` : `<path d="M-5,-28.5 A5,5 0 0 1 5,-30 Q1,-32.5 -3,-30 Q-4.5,-28.5 -3.5,-26.5 L-5.2,-26.5Z" fill="${hair}"/>`}
+      ${o.long ? `<path d="M-5,-29 A5,5 0 0 1 5,-30 Q1,-32 -2,-29 Q-3,-25 -1,-20 L-5.5,-21 Q-6.5,-26 -5,-29Z" fill="${hair}"/>` : `<path d="M-5,-28.5 A5,5 0 0 1 5,-30 Q1,-32.5 -3,-30 Q-4.5,-28.5 -3.5,-26.5 L-5.2,-26.5Z" fill="${hair}"/>`}${INVERNO ? scarfCap(shirt, -24, -28.5, true) : ''}
       ${o.cuia ? `<path d="M7,-19 q0,5 3,5 q3,0 3,-5Z" fill="#4c7a2a"/><path d="M10,-19 l1.5,-5" stroke="#c0c0c0" stroke-width="1"/>` : ''}`;
   }
   function crouch(o = {}) {
@@ -350,10 +413,10 @@
   const CART = vehicle([[-10, -2, -13, -10, 0, 9, '#3a2a1a'], [-10, -2, 10, 13, 0, 9, '#3a2a1a'], [-24, 6, -10, 10, 5, 8, '#8a6038'],
     [-24, 6, -10, -8, 8, 14, '#a8743f'], [-24, 6, 8, 10, 8, 14, '#a8743f'], [-24, -22, -8, 8, 8, 14, '#a8743f'], [4, 6, -8, 8, 8, 14, '#a8743f'],
     [-20, 2, -7, 7, 8, 17, '#e2c26a'], [6, 18, -1, 1, 5, 7, '#5a3d26']]);
-  function rabbit(c = '#f4f1ea') {
+  function rabbit(c = '#f4f1ea', extra = '') {
     return `${shadowE(6, 2)}<g class="bunny" style="${neg(.9)}"><ellipse cx="0" cy="-4" rx="6" ry="4.2" fill="${c}"/><circle cx="-5.6" cy="-5" r="2" fill="#fff"/>
       <circle cx="5" cy="-7" r="3.2" fill="${c}"/><ellipse cx="3.6" cy="-12.5" rx="1.2" ry="4" fill="${c}" transform="rotate(-12 3.6 -12.5)"/><ellipse cx="6" cy="-12.5" rx="1.2" ry="4" fill="${c}" transform="rotate(10 6 -12.5)"/>
-      <ellipse cx="6" cy="-12.2" rx=".5" ry="2.6" fill="#f5b5c0" transform="rotate(10 6 -12.2)"/><circle cx="6.4" cy="-7.4" r=".7" fill="#222"/><circle cx="8" cy="-6.4" r=".6" fill="#e58a9a"/></g>`;
+      <ellipse cx="6" cy="-12.2" rx=".5" ry="2.6" fill="#f5b5c0" transform="rotate(10 6 -12.2)"/><circle cx="6.4" cy="-7.4" r=".7" fill="#222"/><circle cx="8" cy="-6.4" r=".6" fill="#e58a9a"/>${extra}</g>`;
   }
   const MICROBUS = vehicle([...W4(-20, -11, 10, 8), ...W4(12, 21, 10, 8), [-26, 26, -10, 10, 3, 16, '#f4f4f4'], [-26, 26, -10.3, 10.3, 9, 11.5, '#2e6fb5'],
     [-24, 24, -10, 10, 16, 24, '#bfe3f5'], [-26, 26, -10, 10, 24, 27, '#f4f4f4']]);
@@ -478,13 +541,43 @@
 
   const WALLS = ['#f6c1b4', '#bfe0c7', '#f8e1a1', '#c9d6f2', '#f3c6e0', '#e8d6b8', '#bfe3f5', '#f4f1ea', '#f7d6a8'];
   const ROOFS = ['#b5452f', '#a0522d', '#8e3b2a', '#c0563a', '#6d4c41'];
+  // luzes de Natal ao longo de uma linha (pontos já na tela), piscando em cores alternadas
+  const XMAS = ['#ff4d4d', '#ffd23f', '#4dd36b', '#4db8ff', '#ff8ad8'];
+  function bulbs(pts, step = 6, r = 1.5) {
+    let t = `<path d="M${pts.map(pt).join(' L')}" stroke="#2c3a21" stroke-width=".5" fill="none" opacity=".7"/>`, n = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (let u = 0; u < L; u += step, n++) t += `<circle class="twinkle" cx="${f(a[0] + (b[0] - a[0]) * u / L)}" cy="${f(a[1] + (b[1] - a[1]) * u / L)}" r="${r}" fill="${XMAS[n % XMAS.length]}" style="animation-delay:-${((n * .37) % 1.6).toFixed(2)}s"/>`;
+    }
+    return t;
+  }
+  function roofLights(x, y, w, d, h, rh, along, ov = 3) {
+    const X0 = x - ov, X1 = x + w + ov, Y0 = y - ov, Y1 = y + d + ov;
+    if (along === 'x') return bulbs([P(X0, Y1, h), P(X1, Y1, h), P(X1, y + d / 2, h + rh), P(X1, Y0, h)]);
+    return bulbs([P(X0, Y1, h), P(x + w / 2, Y1, h + rh), P(X1, Y1, h), P(X1, Y0, h)]);
+  }
+  // chaminé no pano de trás do telhado, com a fumaça do fogão a lenha
+  let chimN = 0;
+  function chimney(x, y, w, d, h, rh, along, ov = 3) {
+    let cx, cy, zr;
+    if (along === 'x') { cx = x + w * .7; cy = y + d * .22; zr = h + rh * (cy - (y - ov)) / (d / 2 + ov); }
+    else { cx = x + w * .22; cy = y + d * .3; zr = h + rh * (cx - (x - ov)) / (w / 2 + ov); }
+    let t = box(cx - 2.5, cy - 2.5, 5, 5, 10, '#8e5a44', zr - 3);
+    const top = P(cx, cy, zr + 7), n = chimN++;
+    for (let i = 0; i < 3; i++) t += `<g transform="translate(${f(top[0])},${f(top[1])})"><circle class="smoke" r="3.4" fill="#eceff1" style="animation-delay:${((n * .7 + i * 1.65) % 5).toFixed(2)}s;--sx:${12 + (n % 4) * 5}px;--sy:-48px;--ss:2"/></g>`;
+    return t;
+  }
   function house(x, y, w, d, h, wall, roof, along) {
     let s = box(x, y, w, d, h, wall);
     s += `<g transform="${fl(x, y + d, h)}"><rect x="${f(w * .22 - 3.5)}" y="${f(h * .28)}" width="7" height="7" fill="#cfe6f3" stroke="#fff" stroke-width="1"/>
       <rect x="${f(w * .78 - 3.5)}" y="${f(h * .28)}" width="7" height="7" fill="#cfe6f3" stroke="#fff" stroke-width="1"/>
       <rect x="${f(w / 2 - 3.5)}" y="${f(h - 11)}" width="7" height="11" fill="#7a4a2b"/></g>`;
     s += `<g transform="${fr(x + w, y + d, h)}">${wins(d, h, Math.max(1, Math.round(d / 24)), 1, 7, 7, '#bcd6e4', 'stroke="#fff" stroke-width="1"')}</g>`;
-    return s + gable(x, y, w, d, h, Math.min(w, d) * .45, roof, along, wall);
+    const rh = Math.min(w, d) * .45;
+    s += gable(x, y, w, d, h, rh, roof, along, wall);
+    if (INVERNO) s += chimney(x, y, w, d, h, rh, along);
+    if (NATAL) s += roofLights(x, y, w, d, h, rh, along);
+    return s;
   }
   function apartment(x, y, w, d, h, c) {
     const floors = Math.round(h / 16);
@@ -510,27 +603,29 @@
 
   // --- Igreja Matriz (ao norte da praça, de frente para ela) ---
   {
+    // na Páscoa a igreja adota o roxo da Quaresma
+    const CW = PASCOA ? '#c3a9df' : '#f0d27c', CT = PASCOA ? '#c9b1e3' : '#f2d683', CP = PASCOA ? '#f2ebf9' : '#fbf3dc', CB = PASCOA ? '#6c3d8f' : '#d8b75f';
     G += quad(684, 514, 806, 636, '#e2dccd');
-    let n = box(708, 514, 70, 92, 46, '#f0d27c');
+    let n = box(708, 514, 70, 92, 46, CW);
     n += `<g transform="${fr(778, 606, 46)}">`;
     for (let i = 0; i < 4; i++) {
       const u = 14 + i * 22;
-      n += `<rect x="${u - 11}" y="0" width="3" height="46" fill="#fbf3dc"/>`;
+      n += `<rect x="${u - 11}" y="0" width="3" height="46" fill="${CP}"/>`;
       n += `<path class="vitral" style="animation-delay:${(i * .6).toFixed(1)}s" d="M${u - 5},40 L${u - 5},16 Q${u - 5},8 ${u},4 Q${u + 5},8 ${u + 5},16 L${u + 5},40Z" fill="url(#${i % 2 ? 'glassB' : 'glassA'})" stroke="#fff" stroke-width="1.4"/>`;
     }
-    n += `<rect x="0" y="42" width="92" height="4" fill="#d8b75f"/></g>`;
-    n += gable(708, 514, 70, 92, 46, 30, '#dcdad5', 'y', '#f0d27c');
+    n += `<rect x="0" y="42" width="92" height="4" fill="${CB}"/></g>`;
+    n += gable(708, 514, 70, 92, 46, 30, '#dcdad5', 'y', CW);
     add(708, 514, 778, 606, n, 'igreja');
-    let t = box(726, 606, 34, 30, 112, '#f2d683');
-    t += `<g transform="${fl(726, 636, 112)}"><rect width="2.5" height="112" fill="#fbf3dc"/><rect x="31.5" width="2.5" height="112" fill="#fbf3dc"/>
+    let t = box(726, 606, 34, 30, 112, CT);
+    t += `<g transform="${fl(726, 636, 112)}"><rect width="2.5" height="112" fill="${CP}"/><rect x="31.5" width="2.5" height="112" fill="${CP}"/>
       <path d="M10,34 L10,16 Q10,8 17,6 Q24,8 24,16 L24,34Z" fill="#4a3622"/>
       <g transform="translate(17,10) scale(.75)"><g class="bell"><path d="M0,0 V4" stroke="#5b4a2c" stroke-width="1.5"/><path d="M-7,17 Q-7,6 0,4 Q7,6 7,17 L9,19 L-9,19Z" fill="#e0ad2a"/><circle cy="20.5" r="2" fill="#9c7414"/></g></g>
       <circle class="vitral" style="animation-delay:1.1s" cx="17" cy="54" r="7" fill="url(#glassA)" stroke="#fff" stroke-width="1.4"/>
       <path d="M11,112 L11,96 Q11,88 17,86 Q23,88 23,96 L23,112Z" fill="#6b3a1f"/></g>`;
-    t += `<g transform="${fr(760, 636, 112)}"><rect width="2.5" height="112" fill="#fbf3dc"/><rect x="27.5" width="2.5" height="112" fill="#fbf3dc"/>
+    t += `<g transform="${fr(760, 636, 112)}"><rect width="2.5" height="112" fill="${CP}"/><rect x="27.5" width="2.5" height="112" fill="${CP}"/>
       <path d="M8,34 L8,16 Q8,8 15,6 Q22,8 22,16 L22,34Z" fill="#4a3622"/>
       <path class="vitral" style="animation-delay:.4s" d="M11,84 L11,56 Q11,48 15,45 Q19,48 19,56 L19,84Z" fill="url(#glassB)" stroke="#fff" stroke-width="1.4"/></g>`;
-    t += box(723, 603, 40, 36, 5, '#fbf3dc', 112);
+    t += box(723, 603, 40, 36, 5, CP, 112);
     t += pyramid(726, 606, 34, 30, 117, 70, '#9aa3ab');
     const apex = P(743, 621, 187);
     t += `<path d="M${f(apex[0])},${f(apex[1])} v-18 M${f(apex[0] - 6)},${f(apex[1] - 12)} h12" stroke="#d4af37" stroke-width="2.6" stroke-linecap="round"/>`;
@@ -755,6 +850,7 @@
       <path d="M-34,-24 L0,-46 L34,-24 Q0,-16 -34,-24Z" fill="#7a3b2a"/><path d="M0,-46 L34,-24 Q16,-19 2,-19Z" fill="#000" opacity=".15"/>
       <g transform="translate(-14,0) scale(.42)">${seated({ shirt: '#f4f1ea' })}</g><g transform="translate(-2,1) scale(.42)">${seated({ shirt: '#e67e22', long: true })}</g><g transform="translate(12,0) scale(.42)">${seated({ shirt: '#9b59b6' })}</g>
       <g transform="translate(40,4) scale(.44)">${person({ walk: false, shirt: '#1abc9c', long: true })}<g class="wave-arm" style="transform-origin:0px -22px"><path d="M0,-22 L7,-32" stroke="#f1c7a0" stroke-width="2.6" stroke-linecap="round"/></g></g></g>`;
+    if (NATAL) m += `<g transform="translate(405,652) scale(.8)">${bulbs([[-34, -24], [0, -46], [34, -24]], 5, 1.7)}</g>`;
     add(110, 920, 398, 1240, `<g transform="translate(${CX - 1200},${CY - 170})">${m}</g>`, 'agape');
     pinScreen('agape', 405 + CX - 1200, 606 + CY - 170);
   }
@@ -1240,6 +1336,7 @@
     G += quad(800, 1380, 975, 1495, '#8a6a43');
     for (let y = 1386; y < 1492; y += 10) G += quad(806, y, 969, y + 5, y < 1430 ? '#a3c25a' : '#76552f');
     mover({ kind: 'veh', path: [[820, 1436], [955, 1436]], mode: 'ping', speed: 12, v: TRACTOR('#c0392b'), r: 14 });
+    if (INVERNO) movers.pop(); // no inverno, com geada, ninguém está arando
     add(950, 1478, 972, 1492, cyl(958, 1485, 6, 9, '#e2c26a') + cyl(968, 1485, 6, 9, '#e2c26a'));
   }
   // trigal a sudeste
@@ -1321,6 +1418,129 @@
     reserve(x - 6, y - 6, x + 6, y + 6);
   }
 
+  // ==================================================================
+  // DECORAÇÕES DOS TEMAS — sorteiam à parte (alt), então o resto do mapa não muda
+  // ==================================================================
+  const freeSpot = (x, y, m = 5) => { const [a, b] = Wd(x, y); return !statics.some(o => a > o.x0 - m && a < o.x1 + m && b > o.y0 - m && b < o.y1 + m); };
+  const star = (cy, r = 1) => `<path transform="translate(0,${cy}) scale(${r})" d="M0,-6.5 L1.8,-2 L6.6,-1.9 L2.9,1.2 L4.1,5.8 L0,3.2 L-4.1,5.8 L-2.9,1.2 L-6.6,-1.9 L-1.8,-2Z" fill="#ffd23f" stroke="#e0a800" stroke-width=".6"/>`;
+  const flatLights = (x0, y0, x1, y1, z) => bulbs([P(x0, y1, z), P(x1, y1, z), P(x1, y0, z)]);
+
+  // --- Natal --------------------------------------------------------
+  function xmasTreeS(s = 1) {
+    let t = `${shadowE(13, 4)}<rect x="-2.2" y="-8" width="4.4" height="8" fill="#6b4a2b"/><rect x="-6" y="-5" width="12" height="5" rx="1" fill="#c0392b"/>
+      <path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L-18,-6 L-9,-16 L-15,-16 L-6,-30 L-11,-30Z" fill="#2f7a3a"/><path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L4,-6Z" fill="#000" opacity=".12"/>`;
+    [[-6, -33], [3, -38], [7, -29], [-10, -22], [0, -24], [10, -19], [-13, -11], [-4, -13], [6, -10], [14, -9]]
+      .forEach(([x, y], i) => (t += `<circle class="twinkle" cx="${x}" cy="${y}" r="1.8" fill="${XMAS[i % XMAS.length]}" style="animation-delay:-${(i * .29 % 1.6).toFixed(2)}s"/>`));
+    t += `<circle cy="-51" r="9" fill="#ffe27a" opacity=".3" class="twinkle"/>${star(-51)}`;
+    return `<g transform="scale(${s})">${t}</g>`;
+  }
+  function presepioS() {
+    // lapinha de madeira aberta para a rua, com a Sagrada Família, a estrela e luz quente
+    const sk = '#f1c7a0';
+    return `<ellipse cx="0" cy="-14" rx="42" ry="26" fill="#ffd27a" opacity=".2" class="twinkle"/>${shadowE(30, 7)}
+      <ellipse cx="0" cy="-1" rx="28" ry="6" fill="#d9b36a"/><rect x="-24" y="-34" width="48" height="33" fill="#4a3322"/>
+      <ellipse cx="0" cy="-14" rx="18" ry="14" fill="#ffcf6b" opacity=".5" class="twinkle"/>
+      <path d="M-24,0 V-34 M24,0 V-34" stroke="#7a5232" stroke-width="3.4"/>
+      <path d="M-31,-32 L0,-52 L31,-32 L27,-29 L0,-46 L-27,-29Z" fill="#b5884a"/>
+      <path d="M-24,-33 L-20,-38 M-14,-37 L-10,-42 M-4,-41 L0,-46 M6,-41 L10,-45 M16,-37 L19,-40" stroke="#8a6232" stroke-width=".9"/>
+      ${bulbs([[-31, -32], [0, -52], [31, -32]], 5, 1.4)}
+      <path d="M-7,-2 L-9,-9 H9 L7,-2Z" fill="#8a5a2b"/><path d="M-9,-9 Q0,-12 9,-9" stroke="#e8c66a" stroke-width="2.4" fill="none"/>
+      <ellipse cx="0" cy="-11" rx="4.2" ry="2" fill="#fff"/><circle cx="3.6" cy="-11.6" r="1.8" fill="${sk}"/>
+      <path d="M-19,-1 Q-20,-12 -15,-17 Q-11,-19 -10,-13 L-9,-1Z" fill="#3d6fb6"/><circle cx="-13.5" cy="-19.5" r="3.4" fill="${sk}"/>
+      <path d="M-17.6,-18.6 Q-14,-25.5 -9.4,-19.6 L-9.8,-14 Q-13,-18 -17.4,-14.6Z" fill="#2c5aa0"/>
+      <path d="M11,-1 L12.5,-22 Q15,-25 17.5,-22 L19,-1Z" fill="#8a5a2b"/><circle cx="15" cy="-25.5" r="3.3" fill="${sk}"/>
+      <path d="M11.8,-26 Q15,-30.5 18.2,-26 L18.2,-23 Q15,-25.5 11.8,-23Z" fill="#6b4a2b"/><path d="M21,-1 V-30 q0,-3 -2.5,-3" stroke="#6b4a2b" stroke-width="1.3" fill="none"/>
+      <circle cy="-61" r="11" fill="#ffe27a" opacity=".3" class="twinkle"/>${star(-61)}<path d="M0,-55 V-50" stroke="#ffd23f" stroke-width=".8"/>`;
+  }
+  function sananduvaLightsS(s) {
+    // varais de pisca-pisca na copa e o tronco enrolado (balança junto com a árvore)
+    const swag = (x0, x1, y, sag) => bulbs(Array.from({ length: 13 }, (_, i) => [x0 + (x1 - x0) * i / 12, y + Math.sin(i / 12 * Math.PI) * sag]), 7, 2.1);
+    let t = swag(-80, 80, -72, 16) + swag(-68, 68, -94, 14) + swag(-50, 52, -114, 12);
+    t += bulbs(Array.from({ length: 15 }, (_, i) => [(i % 2 ? 7 : -7) * (1 - i / 30), -2 - i * 3.2]), 4, 1.9);
+    return `<g transform="scale(${s})"><g class="sway" style="animation-duration:5s">${t}</g></g>`;
+  }
+  if (NATAL) alt(() => {
+    // árvore de Natal iluminada em cada propriedade
+    for (const [x, y, spot, z] of [[628, 568, 'pipinos'], [626, 880, 'majestade'], [738, 960, 'vicato'], [758, 692, 'artesao'], [588, 1400, 'dallas'], [176, 748, 'elton'],
+      [-142, 1003, 'vivaflor'], [-200, 815, 'moterle'], [230, 318, 'angico'], [1508, 905, 'kaskata'], [985, 120, 'belusso'], [1300, 452, 'fracasso', 22], [848, 1172, 'flora']]) {
+      sprite(x, y, xmasTreeS(.8), 6, spot, z || 0);
+    }
+    // pisca-pisca nos telhados dos atrativos (as casas já ganham luzes em house())
+    add(523, 521, 600, 576, flatLights(522, 520, 600, 576, 30), 'pipinos');
+    add(517, 857, 586, 896, flatLights(516, 856, 586, 896, 40), 'majestade');
+    add(517, 907, 612, 966, flatLights(516, 906, 612, 966, 30), 'majestade');
+    add(745, 859, 802, 916, flatLights(744, 858, 802, 916, 72), 'vicato');
+    add(769, 685, 806, 712, roofLights(768, 684, 38, 28, 20, 24, 'y', 4), 'artesao');
+    add(847, 207, 886, 238, roofLights(846, 206, 40, 32, 20, 14, 'x'), 'belusso');
+    origin(-390, 510); add(991, 876, 1054, 925, flatLights(990, 875, 1054, 925, 30), 'dallas');
+    origin(0, 0, 22); add(1151, 381, 1260, 434, roofLights(1150, 380, 110, 54, 30, 22, 'x'), 'fracasso');
+    origin();
+    // presépio iluminado junto à igreja e luzes na sananduva da praça
+    sprite(792, 574, `<g transform="scale(.8)">${presepioS()}</g>`, 10, 'igreja');
+    sprite(746, 746, sananduvaLightsS(.72), 16, 'praca');
+  });
+
+  // --- Páscoa -------------------------------------------------------
+  const EGG = ['#e84393', '#3d7dd9', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#ff8ad8', '#4db8ff'];
+  const eggS = (c1, c2) => `<ellipse rx="3.6" ry="1.3" fill="#000" opacity=".15"/><path d="M0,-9 C3.2,-9 4,-4.5 4,-3 C4,-.6 2.2,.6 0,.6 C-2.2,.6 -4,-.6 -4,-3 C-4,-4.5 -3.2,-9 0,-9Z" fill="${c1}"/>
+    <path d="M-3.9,-4.2 Q0,-2.4 3.9,-4.2 L3.7,-2.6 Q0,-.9 -3.7,-2.6Z" fill="${c2}"/><circle cx="-1.4" cy="-6.6" r=".8" fill="#fff" opacity=".7"/>`;
+  function crossS() {
+    // cruz de madeira com o manto roxo da Quaresma
+    return `${shadowE(16, 5)}<path d="M-12,0 Q-10,-6 0,-6 Q10,-6 12,0Z" fill="#9a8f84"/>
+      <rect x="-3" y="-86" width="6" height="82" fill="#6b4a2b"/><rect x="-3" y="-86" width="2" height="82" fill="#82603d"/>
+      <rect x="-24" y="-68" width="48" height="6" fill="#6b4a2b"/><rect x="-24" y="-68" width="48" height="2" fill="#82603d"/>
+      <path d="M-20,-69 Q0,-61 20,-69 L18,-38 Q16,-34 13,-38 L9,-60 Q0,-57 -9,-60 L-13,-38 Q-16,-34 -18,-38Z" fill="#6c2d91"/>
+      <path d="M-20,-69 Q0,-61 20,-69 L19.4,-64 Q0,-57 -19.4,-64Z" fill="#8e44ad"/><path d="M-15,-58 L-16,-40 M15,-58 L16,-40" stroke="#4e1f6b" stroke-width="1"/>`;
+  }
+  function chocolateS() {
+    // oficina dos coelhos: panela de chocolate derretido, ovos na mesa e coelhos de touca de cozinheiro
+    const toque = `<g transform="translate(5,-10.5)"><rect x="-2.4" y="-2.5" width="4.8" height="3" fill="#fff" stroke="#ddd" stroke-width=".3"/><circle cx="-1.6" cy="-3.6" r="1.8" fill="#fff"/><circle cx="1.6" cy="-3.6" r="1.8" fill="#fff"/><circle cy="-4.6" r="2" fill="#fff"/></g>`;
+    const choc = (x, y, c, k = .7) => `<g transform="translate(${x},${y}) scale(${k})">${eggS(c, c === '#6b3a1f' || c === '#7a4424' ? '#f1c40f' : '#ffffff')}</g>`;
+    return `${shadowE(32, 7)}
+      <rect x="-20" y="-11" width="40" height="3" rx="1" fill="#a8743f"/><path d="M-17,-8 V0 M17,-8 V0" stroke="#7a5232" stroke-width="2"/>
+      <path d="M-15,-11 L-14,-20 H-2 L-1,-11Z" fill="#4a4a4a"/><ellipse cx="-8" cy="-20" rx="6.4" ry="1.8" fill="#5a3220"/>
+      <g class="steam" style="animation-delay:-.6s"><path d="M-10,-23 q-1.5,-3 0,-6 M-6,-23 q1.5,-3 0,-6" stroke="#fff" stroke-width=".9" fill="none"/></g>
+      <g class="wave-arm" style="transform-origin:-6px -19px"><path d="M-6,-19 L-1,-30" stroke="#c9a06a" stroke-width="1.4" stroke-linecap="round"/></g>
+      ${choc(4, -11, '#6b3a1f')}${choc(9, -11, '#7a4424')}${choc(14, -11, '#6b3a1f')}${choc(9, -14.5, '#e84393')}
+      <g transform="translate(-27,0)">${rabbit('#f4f1ea', toque)}</g>
+      <g transform="translate(27,0) scale(-1,1)">${rabbit('#d9c3a5', toque + `<g transform="translate(10,-4) scale(.6)">${eggS('#6b3a1f', '#f1c40f')}</g>`)}</g>
+      <g transform="translate(-2,2)"><path d="M-7,0 h14 l-1.5,-5 h-11Z" fill="#b5835a"/>${choc(-3.5, -4, '#e84393')}${choc(.5, -4.5, '#3d7dd9')}${choc(4, -4, '#f1c40f')}</g>`;
+  }
+  if (PASCOA) alt(() => {
+    sprite(792, 574, crossS(), 10, 'igreja');
+    // ovos coloridos escondidos pelas quadras da cidade
+    for (let i = 0, n = 0; i < 500 && n < 60; i++) {
+      const [a, b] = pick(BL), [c, d] = pick(BL), x = rr(a + 2, b - 2), y = rr(c + 2, d - 2);
+      if (!freeSpot(x, y, 4)) continue;
+      sprite(x, y, eggS(pick(EGG), pick(EGG)), 2); n++;
+    }
+    // Dallas: coelhos fabricando ovos de chocolate
+    sprite(470, 1160, chocolateS(), 14, 'dallas');
+  });
+
+  // --- Primavera ----------------------------------------------------
+  const BED = ['#e84393', '#f1c40f', '#ffffff', '#e74c3c', '#9b59b6', '#f39c12', '#ff8ad8'];
+  function bed(x0, y0, x1, y1) {
+    let t = quad(x0, y0, x1, y1, '#7a5a3a');
+    for (let i = 0; i < 5; i++) { const q = P(rr(x0 + 1, x1 - 1), rr(y0 + 1, y1 - 1)); t += `<circle cx="${f(q[0])}" cy="${f(q[1])}" r="1.9" fill="#4f8a35"/>`; }
+    for (let i = 0; i < 8; i++) { const q = P(rr(x0 + 1, x1 - 1), rr(y0 + 1, y1 - 1)); t += `<circle cx="${f(q[0])}" cy="${f(q[1] - .6)}" r="${f(rr(1.1, 1.7))}" fill="${pick(BED)}"/>`; }
+    return t;
+  }
+  const bushS = c => `${shadowE(9, 3)}<circle cx="-4.5" cy="-5" r="5.2" fill="#4f8a35"/><circle cx="4.5" cy="-5" r="5.6" fill="#5e9a3c"/><circle cx="0" cy="-9.5" r="5.4" fill="#6aa846"/>`
+    + Array.from({ length: 10 }, () => `<circle cx="${f(rr(-8.5, 8.5))}" cy="${f(rr(-14, -2.5))}" r="${f(rr(1.1, 1.8))}" fill="${c}"/>`).join('');
+  if (PRIMAVERA) alt(() => {
+    // canteiros nas calçadas das quadras (no chão: prédios e casas ficam por cima)
+    for (const [a, b] of BL) for (const [c, d] of BL) {
+      for (let u = a + 10; u < b - 22; u += 30) G += bed(u, c + 1, u + 16, c + 5) + bed(u, d - 5, u + 16, d - 1);
+      for (let v = c + 10; v < d - 22; v += 30) G += bed(a + 1, v, a + 5, v + 16) + bed(b - 5, v, b - 1, v + 16);
+    }
+    // arbustos floridos nas esquinas das quadras e em volta da cidade
+    const spots = [];
+    for (const [a, b] of BL) for (const [c, d] of BL) spots.push([a + 4, c + 4], [b - 4, c + 4], [a + 4, d - 4], [b - 4, d - 4]);
+    for (let t = CITY.x0 + 20; t < CITY.x1 - 10; t += 36) spots.push([t, CITY.y1 + 24], [CITY.x1 + 24, t], [t, CITY.y0 - 24], [CITY.x0 - 24, t]);
+    for (const [x, y] of spots) if (freeSpot(x, y, 6) && !nearRoad(x, y, 4)) sprite(x, y, bushS(pick(BED)), 5);
+  });
+
   G += RDL.dirt + RDL.edge + RDL.surf + RDL.line;
 
   // ==================================================================
@@ -1395,7 +1615,7 @@
         <circle cy="-31" r="12" fill="#fff"/>${d.icon && ICONS[d.icon] ? ICONS[d.icon] : `<text y="-25.5" text-anchor="middle" font-size="15">${d.emoji}</text>`}</g></g></g>`;
   }
 
-  svg.innerHTML = `<defs>${defs}</defs>${BG}<g>${G}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="mist" pointer-events="none">${MIST}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
+  svg.innerHTML = `<defs>${defs.replace(/<linearGradient id="mtG".*?<\/linearGradient>/, themeGround)}</defs>${BG}<g>${themeGround(G)}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="mist" pointer-events="none">${MIST}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
 
   // ==================================================================
   // animação por JS
@@ -1526,6 +1746,37 @@
     })(start);
   }
 
+  // Natal: Papai Noel e as renas cruzam o céu de tempos em tempos
+  const reindeer = (x, lead) => `<g transform="translate(${x},-12)">
+    <g class="deer-leg" style="transform-origin:-5px 2px"><path d="M-5,2 L-7,9" stroke="#6b4a2b" stroke-width="1.6" stroke-linecap="round"/></g>
+    <g class="deer-leg" style="transform-origin:5px 2px;animation-direction:alternate-reverse"><path d="M5,2 L7,9" stroke="#6b4a2b" stroke-width="1.6" stroke-linecap="round"/></g>
+    <ellipse rx="9" ry="4.2" fill="#8a5a3a"/><path d="M6,-2 L10,-8" stroke="#8a5a3a" stroke-width="3.4" stroke-linecap="round"/><ellipse cx="12" cy="-9" rx="3.6" ry="2.6" fill="#8a5a3a"/>
+    <path d="M10,-11 L8,-16 M8.6,-14 L6.4,-15 M12,-11 L13,-16 M12.8,-14 L15,-15" stroke="#5a3d26" stroke-width=".9"/>
+    ${lead ? '<circle cx="15.6" cy="-8.6" r="3.4" fill="#ff4d4d" opacity=".3" class="twinkle"/>' : ''}<circle cx="15.4" cy="-8.6" r="${lead ? 1.6 : 1}" fill="${lead ? '#e3241b' : '#3a2a1a'}"/>
+    <circle cx="12.5" cy="-9.8" r=".6" fill="#111"/><path d="M-9,-1 l-3,-1.5" stroke="#f4f1ea" stroke-width="1.6" stroke-linecap="round"/></g>`;
+  const SANTA = `<g class="santa-bob">
+    ${[0, 1, 2, 3, 4].map(i => `<circle class="twinkle" cx="${-38 - i * 14}" cy="${2 + (i % 2) * 5}" r="${f(1.9 - i * .25)}" fill="#ffe27a" style="animation-delay:-${(i * .3).toFixed(1)}s"/>`).join('')}
+    <path d="M-32,6 H8 Q14,6 14,0" stroke="#c9a400" stroke-width="2" fill="none"/><path d="M-26,2 V6 M2,2 V6" stroke="#c9a400" stroke-width="1.4"/>
+    <path d="M-28,-22 Q-31,-30 -23,-31 Q-17,-29 -19,-21Z" fill="#8a5a2b"/><rect x="-26" y="-25" width="5" height="4" fill="#3d7dd9"/><rect x="-22" y="-27" width="4" height="5" fill="#2ecc71"/>
+    <rect x="-14" y="-22" width="10" height="13" rx="3" fill="#d7261e"/><circle cx="-8" cy="-26" r="4" fill="#f1c7a0"/>
+    <path d="M-12,-25 Q-8,-16 -4,-25 Q-8,-22 -12,-25Z" fill="#fff"/><path d="M-12.5,-27 L-8,-34 L-3.5,-27Z" fill="#d7261e"/><circle cx="-8" cy="-34" r="1.4" fill="#fff"/><rect x="-13" y="-28" width="10" height="2" rx="1" fill="#fff"/>
+    <path d="M-30,-10 H4 L8,2 H-26 Q-32,2 -30,-10Z" fill="#c0392b"/><path d="M-30,-10 H4" stroke="#f1c40f" stroke-width="1.4"/>
+    <path d="M-6,-17 L5,-13" stroke="#d7261e" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M5,-13 Q20,-20 36,-20 M5,-13 Q36,-26 64,-20" stroke="#7a4a24" stroke-width=".7" fill="none"/>
+    ${reindeer(28, false)}${reindeer(56, true)}</g>`;
+  function flySanta() {
+    const g = document.createElementNS(NS, 'g');
+    g.innerHTML = SANTA;
+    fx.appendChild(g);
+    const y0 = rr(110, 210), dur = rr(15000, 19000), start = performance.now();
+    (function step(now) {
+      const p = (now - start) / dur;
+      if (p >= 1) { g.remove(); return; }
+      g.setAttribute('transform', `translate(${f(-200 + (W + 400) * p)},${f(y0 - p * 40 + Math.sin(p * Math.PI * 3) * 12)}) scale(1.15)`);
+      requestAnimationFrame(step);
+    })(start);
+  }
+
   function fxFrame(t) {
     for (const b of birds) {
       const span = W + 300, x = ((b.ph * 10 + t * Math.abs(b.sp)) % span);
@@ -1562,6 +1813,10 @@
       if (visibleNow && document.visibilityState === 'visible') jumpFish();
       setTimeout(fishLoop, rr(1200, 2600));
     })();
+    if (NATAL) setTimeout(function santaLoop() {
+      if (visibleNow && document.visibilityState === 'visible') flySanta();
+      setTimeout(santaLoop, rr(25000, 40000));
+    }, 4000);
   }
 
   // ==================================================================
