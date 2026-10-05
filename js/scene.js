@@ -88,7 +88,7 @@
 
   // tema do site (js/temas.js): estação do ano e datas festivas. Verão é o visual padrão.
   const TEMA = window.TEMA || { id: 'verao', e: id => id === 'verao' };
-  const NATAL = TEMA.e('natal'), ANONOVO = TEMA.e('anonovo'), PASCOA = TEMA.e('pascoa'), PRIMAVERA = TEMA.e('primavera'), OUTONO = TEMA.e('outono'), INVERNO = TEMA.e('inverno');
+  const NATAL = TEMA.e('natal'), ANONOVO = TEMA.e('anonovo'), PASCOA = TEMA.e('pascoa'), PRIMAVERA = TEMA.e('primavera'), OUTONO = TEMA.e('outono'), INVERNO = TEMA.e('inverno'), FARRAPOS = TEMA.e('farroupilha');
   // As decorações dos temas sorteiam com outra sequência: assim árvores, casas e cores do mapa
   // ficam no mesmo lugar em todos os temas (o mapa principal continua usando a sequência de sempre).
   let tseed = 4242, altOn = false;
@@ -268,16 +268,25 @@
     return t;
   }
 
+  // Semana Farroupilha: pilcha (sem sorteio, para não mudar o mapa)
+  const LENCO = '<path d="M-3.4,-25.6 L3.4,-25.6 L0,-21.2Z" fill="#d7261e"/>';
+  const chapeu = hy => `<ellipse cx="0" cy="${hy - 3.6}" rx="8.6" ry="1.9" fill="#1d1d1d"/><path d="M-4.6,${hy - 3.6} Q-4.6,${hy - 9} 0,${hy - 9} Q4.6,${hy - 9} 4.6,${hy - 3.6}Z" fill="#1d1d1d"/><path d="M-4.4,${hy - 4.6} H4.4" stroke="#8a5a2b" stroke-width=".9"/>`;
+  const vestidoPrenda = c => `<path d="M-4.2,-17 L4.2,-17 L9.5,0 L-9.5,0Z" fill="${c}"/><path d="M-9.5,0 L9.5,0" stroke="#fff" stroke-width="1.6"/><path d="M-6.5,-8 L6.5,-8" stroke="${shade(c, .8)}" stroke-width=".8"/>`;
+
   // pessoa de perfil, pés em (0,0), ~34 de altura (use escala PS)
   function person(o = {}) {
     const shirt = o.shirt || pick(SHIRTS), pants = o.pants || pick(PANTS);
     const skin = o.skin || pick(SKINS), hair = o.hair || pick(HAIRS);
     const walk = o.walk !== false, d = neg(1);
+    const prenda = FARRAPOS && (o.dress || o.long), peao = FARRAPOS && !prenda;
+    const lw = peao ? 5.2 : 3.6, bota = peao ? '<path d="M0,-3.2 L0,0 L2.4,0" stroke="#1d1d1d" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' : '';
     let s = `<ellipse rx="7" ry="2.5" fill="#000" opacity=".15"/>`;
-    s += `<g class="${walk ? 'leg-a' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="3.6" stroke-linecap="round"/></g>`;
-    s += `<g class="${walk ? 'leg-b' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="3.6" stroke-linecap="round"/></g>`;
+    s += `<g class="${walk ? 'leg-a' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="${lw}" stroke-linecap="round"/>${bota}</g>`;
+    s += `<g class="${walk ? 'leg-b' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="${lw}" stroke-linecap="round"/>${bota}</g>`;
+    if (prenda) s += vestidoPrenda(shirt);
     s += `<g class="${walk ? 'walk-bob' : ''}" style="${d}">`;
     s += o.dress ? `<path d="M-4,-26 L4,-26 L7.5,-9 L-7.5,-9Z" fill="${shirt}"/>` : `<rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="${shirt}"/>`;
+    if (peao) s += LENCO;
     if (INVERNO) s += coat(shirt, -26, o.dress ? 17.5 : 16.5);
     if (o.apron) s += `<rect x="-1" y="-22" width="6" height="12" rx="1" fill="#fff"/>`;
     s += `<circle cx="0" cy="-30.5" r="4.8" fill="${skin}"/>`;
@@ -286,6 +295,7 @@
       : `<path d="M-5,-30.5 A5,5 0 0 1 5,-32 Q1,-34.5 -3,-32 Q-4.5,-30.5 -3.5,-28.5 L-5.2,-28.5Z" fill="${hair}"/>`;
     if (o.hat) s += `<ellipse cx="0" cy="-34" rx="8" ry="1.6" fill="${o.hat}"/><rect x="-4.5" y="-39" width="9" height="5" rx="2" fill="${o.hat}"/>`;
     if (INVERNO) s += scarfCap(shirt, -26, -30.5, !o.hat && !o.veil);
+    if (peao && !o.hat) s += chapeu(-30.5);
     if (o.veil) s += `<path d="M-3,-35 Q-12,-22 -9,-8 L-3,-10Z" fill="#fff" opacity=".85"/>`;
     if (o.carry) {
       s += `<path d="M0,-22 L8,-17" stroke="${skin}" stroke-width="2.6" stroke-linecap="round"/>`;
@@ -306,7 +316,7 @@
     return `<path d="M0,-10 L7,-10 L7,0" stroke="${pants}" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="-4.5" y="-24" width="9" height="15" rx="3" fill="${shirt}"/>${INVERNO ? coat(shirt, -24, 15.5) : ''}<path d="M1,-20 L8,-15" stroke="${skin}" stroke-width="2.6" stroke-linecap="round"/>
       <circle cx="0" cy="-28.5" r="4.8" fill="${skin}"/>
-      ${o.long ? `<path d="M-5,-29 A5,5 0 0 1 5,-30 Q1,-32 -2,-29 Q-3,-25 -1,-20 L-5.5,-21 Q-6.5,-26 -5,-29Z" fill="${hair}"/>` : `<path d="M-5,-28.5 A5,5 0 0 1 5,-30 Q1,-32.5 -3,-30 Q-4.5,-28.5 -3.5,-26.5 L-5.2,-26.5Z" fill="${hair}"/>`}${INVERNO ? scarfCap(shirt, -24, -28.5, true) : ''}
+      ${o.long ? `<path d="M-5,-29 A5,5 0 0 1 5,-30 Q1,-32 -2,-29 Q-3,-25 -1,-20 L-5.5,-21 Q-6.5,-26 -5,-29Z" fill="${hair}"/>` : `<path d="M-5,-28.5 A5,5 0 0 1 5,-30 Q1,-32.5 -3,-30 Q-4.5,-28.5 -3.5,-26.5 L-5.2,-26.5Z" fill="${hair}"/>`}${INVERNO ? scarfCap(shirt, -24, -28.5, true) : ''}${FARRAPOS ? `<path d="M-3.4,-23.6 L3.4,-23.6 L0,-19.2Z" fill="#d7261e"/>${o.long ? '' : chapeu(-28.5)}` : ''}
       ${o.cuia ? `<path d="M7,-19 q0,5 3,5 q3,0 3,-5Z" fill="#4c7a2a"/><path d="M10,-19 l1.5,-5" stroke="#c0c0c0" stroke-width="1"/>` : ''}`;
   }
   function crouch(o = {}) {
@@ -1428,6 +1438,10 @@
   const star = (cy, r = 1) => `<path transform="translate(0,${cy}) scale(${r})" d="M0,-6.5 L1.8,-2 L6.6,-1.9 L2.9,1.2 L4.1,5.8 L0,3.2 L-4.1,5.8 L-2.9,1.2 L-6.6,-1.9 L-1.8,-2Z" fill="#ffd23f" stroke="#e0a800" stroke-width=".6"/>`;
   const flatLights = (x0, y0, x1, y1, z) => bulbs([P(x0, y1, z), P(x1, y1, z), P(x1, y0, z)]);
 
+  // um ponto livre junto de cada estabelecimento da associação (árvore de Natal, bandeira...)
+  const ESTAB = [[628, 568, 'pipinos'], [626, 880, 'majestade'], [738, 960, 'vicato'], [758, 692, 'artesao'], [588, 1400, 'dallas'], [176, 748, 'elton'],
+    [-142, 1003, 'vivaflor'], [-200, 815, 'moterle'], [230, 318, 'angico'], [1508, 905, 'kaskata'], [985, 120, 'belusso'], [1300, 452, 'fracasso', 22], [848, 1172, 'flora']];
+
   // --- Natal --------------------------------------------------------
   const GIFT = [['#d7261e', '#ffd23f'], ['#2f8f4e', '#ffffff'], ['#3d7dd9', '#ffd23f'], ['#ffd23f', '#d7261e'], ['#9b59b6', '#ffffff'], ['#ffffff', '#d7261e'], ['#e67e22', '#2f8f4e']];
   function giftS(k = 0, w = 8, h = 7) {
@@ -1443,7 +1457,7 @@
       <path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L-18,-6 L-9,-16 L-15,-16 L-6,-30 L-11,-30Z" fill="#2f7a3a"/><path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L4,-6Z" fill="#000" opacity=".12"/>`;
     [[-6, -33], [3, -38], [7, -29], [-10, -22], [0, -24], [10, -19], [-13, -11], [-4, -13], [6, -10], [14, -9]]
       .forEach(([x, y], i) => (t += `<circle class="twinkle" cx="${x}" cy="${y}" r="1.8" fill="${XMAS[i % XMAS.length]}" style="animation-delay:-${(i * .29 % 1.6).toFixed(2)}s"/>`));
-    t += `<circle cy="-51" r="9" fill="#ffe27a" opacity=".3" class="twinkle"/>${star(-51)}`;
+    t += `<g opacity=".3"><circle cy="-51" r="9" fill="#ffe27a" class="twinkle"/></g>${star(-51)}`;
     // presentes ao pé da árvore
     t += `<g transform="translate(-12,4)">${giftS(0, 8, 7)}</g><g transform="translate(11,5)">${giftS(2, 7, 6)}</g><g transform="translate(-1,7)">${giftS(4, 9, 5)}</g>`;
     return `<g transform="scale(${s})">${t}</g>`;
@@ -1451,9 +1465,9 @@
   function presepioS() {
     // lapinha de madeira aberta para a rua, com a Sagrada Família, a estrela e luz quente
     const sk = '#f1c7a0';
-    return `<ellipse cx="0" cy="-14" rx="42" ry="26" fill="#ffd27a" opacity=".2" class="twinkle"/>${shadowE(30, 7)}
+    return `<g opacity=".2"><ellipse cx="0" cy="-14" rx="42" ry="26" fill="#ffd27a" class="twinkle"/></g>${shadowE(30, 7)}
       <ellipse cx="0" cy="-1" rx="28" ry="6" fill="#d9b36a"/><rect x="-24" y="-34" width="48" height="33" fill="#4a3322"/>
-      <ellipse cx="0" cy="-14" rx="18" ry="14" fill="#ffcf6b" opacity=".5" class="twinkle"/>
+      <g opacity=".5"><ellipse cx="0" cy="-14" rx="18" ry="14" fill="#ffcf6b" class="twinkle"/></g>
       <path d="M-24,0 V-34 M24,0 V-34" stroke="#7a5232" stroke-width="3.4"/>
       <path d="M-31,-32 L0,-52 L31,-32 L27,-29 L0,-46 L-27,-29Z" fill="#b5884a"/>
       <path d="M-24,-33 L-20,-38 M-14,-37 L-10,-42 M-4,-41 L0,-46 M6,-41 L10,-45 M16,-37 L19,-40" stroke="#8a6232" stroke-width=".9"/>
@@ -1464,7 +1478,7 @@
       <path d="M-17.6,-18.6 Q-14,-25.5 -9.4,-19.6 L-9.8,-14 Q-13,-18 -17.4,-14.6Z" fill="#2c5aa0"/>
       <path d="M11,-1 L12.5,-22 Q15,-25 17.5,-22 L19,-1Z" fill="#8a5a2b"/><circle cx="15" cy="-25.5" r="3.3" fill="${sk}"/>
       <path d="M11.8,-26 Q15,-30.5 18.2,-26 L18.2,-23 Q15,-25.5 11.8,-23Z" fill="#6b4a2b"/><path d="M21,-1 V-30 q0,-3 -2.5,-3" stroke="#6b4a2b" stroke-width="1.3" fill="none"/>
-      <circle cy="-61" r="11" fill="#ffe27a" opacity=".3" class="twinkle"/>${star(-61)}<path d="M0,-55 V-50" stroke="#ffd23f" stroke-width=".8"/>`;
+      <g opacity=".3"><circle cy="-61" r="11" fill="#ffe27a" class="twinkle"/></g>${star(-61)}<path d="M0,-55 V-50" stroke="#ffd23f" stroke-width=".8"/>`;
   }
   function sananduvaLightsS(s) {
     // varais de pisca-pisca na copa e o tronco enrolado (balança junto com a árvore)
@@ -1475,8 +1489,7 @@
   }
   if (NATAL) alt(() => {
     // árvore de Natal iluminada em cada propriedade
-    for (const [x, y, spot, z] of [[628, 568, 'pipinos'], [626, 880, 'majestade'], [738, 960, 'vicato'], [758, 692, 'artesao'], [588, 1400, 'dallas'], [176, 748, 'elton'],
-      [-142, 1003, 'vivaflor'], [-200, 815, 'moterle'], [230, 318, 'angico'], [1508, 905, 'kaskata'], [985, 120, 'belusso'], [1300, 452, 'fracasso', 22], [848, 1172, 'flora']]) {
+    for (const [x, y, spot, z] of ESTAB) {
       sprite(x, y, xmasTreeS(.8), 6, spot, z || 0);
     }
     // pisca-pisca nos telhados dos atrativos (as casas já ganham luzes em house())
@@ -1543,6 +1556,79 @@
       const egg = `<g transform="translate(-1.5,-8.6) rotate(-18) scale(.62)">${eggS(pick(EGG), pick(EGG), false)}</g>`;
       mover({ kind: 'sprite', path, mode: 'ping', speed: rr(9, 13), s: .9, inner: rabbit(c, egg), r: 3 });
     }
+  });
+
+  // --- Semana Farroupilha ---------------------------------------------
+  const RS_FLAG = `<path d="M0,0 L28,0 L0,18Z" fill="#1e8f3e"/><path d="M28,0 L28,18 L0,18Z" fill="#f1c40f"/><path d="M0,18 L5,18 L28,4 L28,0 L23,0 L0,15Z" fill="#d7261e"/><circle cx="14" cy="9" r="3.4" fill="#fff"/><circle cx="14" cy="9" r="1.8" fill="#2f8f4e"/>`;
+  const flagPoleS = (h = 56) => `${shadowE(6, 2)}<path d="M0,0 V-${h}" stroke="#cfd4da" stroke-width="2"/><circle cy="-${h + 1}" r="1.8" fill="#d4af37"/><g transform="translate(1,-${h - 2})"><g class="flag" style="${neg(1.4)}">${RS_FLAG}</g></g>`;
+  // bandeirolas verde, vermelho e amarelo penduradas entre dois pontos (já na tela), com barriga
+  function bandeirolas(a, b, sag = 10) {
+    const n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 7)), C = ['#1e8f3e', '#d7261e', '#f1c40f'];
+    const pts = Array.from({ length: n + 1 }, (_, i) => [a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n + Math.sin(i / n * Math.PI) * sag]);
+    let t = `<path d="M${pts.map(pt).join(' L')}" stroke="#5a4a3a" stroke-width=".6" fill="none"/>`;
+    pts.slice(1, -1).forEach(([x, y], i) => (t += `<path d="M${f(x - 2.6)},${f(y)} L${f(x + 2.6)},${f(y)} L${f(x)},${f(y + 5.5)}Z" fill="${C[i % 3]}"/>`));
+    return t;
+  }
+  // cavalo de perfil (virado para a direita), com ou sem cavaleiro pilchado; a pé ou parado
+  function horseS(o = {}) {
+    const c = o.c || '#8a5a3a', dk = shade(c, .7), mv = o.walk !== false;
+    const leg = (x, i) => `<g class="${mv ? 'deer-leg' : ''}" style="transform-origin:${x}px -11px${i % 2 ? ';animation-direction:alternate-reverse' : ''}"><path d="M${x},-11 L${x},0" stroke="${i < 2 ? dk : c}" stroke-width="2.4" stroke-linecap="round"/><path d="M${x - .6},0 h2" stroke="#2b2b2b" stroke-width="1.6"/></g>`;
+    let t = `${shadowE(14, 3.5)}${leg(-7, 0)}${leg(6, 1)}`;
+    t += `<path d="M-12,-17 Q-17,-12 -15,-4" stroke="#3a2a1a" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+    t += `<ellipse cx="0" cy="-15" rx="12" ry="5.6" fill="${c}"/><path d="M8,-17 L13,-27 L17,-25 L12,-14Z" fill="${c}"/><ellipse cx="17" cy="-26" rx="5" ry="2.8" fill="${c}" transform="rotate(25 17 -26)"/>`;
+    t += `<path d="M12,-27 Q9,-22 8,-17" stroke="#3a2a1a" stroke-width="2" fill="none"/><path d="M13.6,-29 l.8,-3 l1.4,2.6Z" fill="${c}"/><circle cx="16.4" cy="-26.6" r=".7" fill="#111"/>`;
+    t += `${leg(-4, 2)}${leg(9, 3)}`;
+    if (o.rider) {
+      t += `<path d="M-6,-20 h10 l-1,4 h-8Z" fill="#5a3d26"/><rect x="-5" y="-20.5" width="8" height="2" fill="#c0392b"/>`; // arreio e pelego
+      t += `<g transform="translate(-2,-18) scale(${PS})">${seated({ shirt: o.rider, long: o.prenda })}</g>`;
+      if (o.flag) t += `<path d="M2,-27 V-62" stroke="#cfd4da" stroke-width="1.4"/><g transform="translate(2.6,-61) scale(.72)"><g class="flag" style="${neg(1.4)}">${RS_FLAG}</g></g>`;
+    }
+    return t;
+  }
+  // galpão crioulo do piquete
+  function galpao(x, y, w, d, h) {
+    let t = box(x, y, w, d, h, '#8a6038', 0, { right: '#74512f' });
+    t += `<g transform="${fl(x, y + d, h)}">${Array.from({ length: Math.floor(w / 4) }, (_, i) => `<path d="M${i * 4 + 2},0 V${h}" stroke="#6b4a2b" stroke-width=".6"/>`).join('')}
+      <rect x="${f(w / 2 - 9)}" y="${f(h - 14)}" width="18" height="14" fill="#2b1d14"/><rect x="${f(w / 2 - 9)}" y="${f(h - 14)}" width="18" height="2" fill="#5a3d26"/>
+      <rect x="${f(w / 2 - 14)}" y="2" width="28" height="7" rx="1" fill="#f3e3c4" stroke="#5a3d26" stroke-width=".6"/>
+      <text x="${f(w / 2)}" y="7.4" text-anchor="middle" font-family="Cinzel,serif" font-weight="700" font-size="4.6" fill="#5a3d26">PIQUETE</text></g>`;
+    t += `<g transform="${fr(x + w, y + d, h)}">${Array.from({ length: Math.floor(d / 4) }, (_, i) => `<path d="M${i * 4 + 2},0 V${h}" stroke="#5a3d26" stroke-width=".6"/>`).join('')}</g>`;
+    return t + gable(x, y, w, d, h, 14, '#6b5a3a', 'x', '#8a6038', 4);
+  }
+  function fogoDeChaoS() {
+    // fogo de chão com costela nos espetos e a roda de chimarrão
+    const roda = [[-26, -4, 1], [26, -4, -1], [-18, 8, 1], [18, 8, -1], [-8, -12, 1], [10, -12, -1]];
+    const sit = ([x, y, k], i) => `<g transform="translate(${x},${y}) scale(${k * PS},${PS})"><rect x="-6" y="-4" width="12" height="4" rx="1.5" fill="#7a5232"/>${seated({ cuia: i % 2 === 0, long: i === 3 })}</g>`;
+    const espeto = (x, k) => `<path d="M${x},2 L${x + k * 11},-24" stroke="#9aa0a6" stroke-width="1.1"/><path d="M${x + k * 5},-11 l${k * 4},-9 l${k * 3},1.5 l${-k * 4},9Z" fill="#a0442a"/><path d="M${x + k * 5.6},-12.5 l${k * 3},-6.6" stroke="#f0d9b5" stroke-width=".7"/>`;
+    return roda.filter(r => r[1] < 0).map(sit).join('') + `<g opacity=".15"><ellipse rx="40" ry="16" fill="#ffb347" class="twinkle"/></g>
+      <ellipse rx="13" ry="5" fill="#5a4a3a"/><path d="M-9,1 L9,-2 M-8,-2 L8,1" stroke="#6b4a2b" stroke-width="2.4"/>
+      <g class="flame" style="transform-origin:0px 0px"><path d="M0,-15 Q7,-5 0,0 Q-7,-5 0,-15Z" fill="#ff8a1e"/><path d="M0,-9 Q3.5,-3 0,0 Q-3.5,-3 0,-9Z" fill="#ffe066"/></g>
+      ${espeto(-12, 1)}${espeto(12, -1)}${espeto(-4, .4)}
+      <g transform="translate(0,-16)"><circle class="smoke" r="3.6" fill="#ddd" style="--sx:14px;--sy:-44px;--ss:2"/><circle class="smoke" r="3.6" fill="#ddd" style="animation-delay:2.5s;--sx:8px;--sy:-44px;--ss:2"/></g>`
+      + roda.filter(r => r[1] >= 0).map(sit).join('');
+  }
+  if (FARRAPOS) alt(() => {
+    // bandeira do RS junto de cada estabelecimento da associação
+    for (const [x, y, spot, z] of ESTAB) sprite(x, y, flagPoleS(), 4, spot, z || 0);
+    // bandeirolas na praça, presas nos postes de luz
+    const pA = P(689, 689, 32), pB = P(689, 801, 32), pC = P(801, 801, 32), pD = P(760, 689, 26);
+    add(688, 689, 690, 801, bandeirolas(pA, pB), 'praca');
+    add(689, 800, 801, 802, bandeirolas(pB, pC), 'praca');
+    add(689, 688, 760, 690, bandeirolas(pA, pD, 6), 'praca');
+    // piquete: galpão crioulo, fogo de chão, palanque com cavalo e bandeira (sai do lugar o que estiver no campo)
+    const [gx, gy] = [590, 378];
+    for (let i = statics.length - 1; i >= 0; i--) { const o = statics[i]; if (!o.spot && o.x1 > gx - 34 && o.x0 < gx + 96 && o.y1 > gy - 22 && o.y0 < gy + 82) statics.splice(i, 1); }
+    G += `<path d="${blob(gx + 30, gy + 30, 70, 54, 16, .08)}" fill="#c9b07a" opacity=".55"/>`;
+    add(gx, gy, gx + 56, gy + 30, galpao(gx, gy, 56, 30, 18), null);
+    sprite(gx + 8, gy + 62, fogoDeChaoS(), 18);
+    sprite(gx + 72, gy + 40, `<path d="M-10,0 V-14 M10,0 V-14 M-12,-12 H12" stroke="#6b4a2b" stroke-width="2"/>`, 4);
+    sprite(gx + 70, gy + 52, horseS({ walk: false, c: '#6b4a32' }), 8);
+    sprite(gx - 14, gy + 44, flagPoleS(64), 4);
+    // cavalgada pelas ruas da cidade, com bandeiras do RS
+    const desfile = [[482, 838], [1008, 838], [1008, 652], [482, 652], [482, 838]];
+    const cores = ['#f4f1ea', '#1d1d1d', '#7a3b2a', '#f4f1ea', '#2c3e50', '#c0392b', '#f4f1ea'];
+    const pelos = ['#8a5a3a', '#3a2a1a', '#b07a4a', '#f2ede4', '#6b4a32', '#8a5a3a', '#2b2b2b'];
+    cores.forEach((c, i) => mover({ kind: 'sprite', path: desfile, speed: 11, phase: .5 - i * .017, s: .9, r: 9, inner: horseS({ rider: c, prenda: i === 3, flag: i === 0 || i === 4, c: pelos[i] }) }));
   });
 
   // --- Primavera ----------------------------------------------------
@@ -1779,7 +1865,7 @@
     <g class="deer-leg" style="transform-origin:5px 2px;animation-direction:alternate-reverse"><path d="M5,2 L7,9" stroke="#6b4a2b" stroke-width="1.6" stroke-linecap="round"/></g>
     <ellipse rx="9" ry="4.2" fill="#8a5a3a"/><path d="M6,-2 L10,-8" stroke="#8a5a3a" stroke-width="3.4" stroke-linecap="round"/><ellipse cx="12" cy="-9" rx="3.6" ry="2.6" fill="#8a5a3a"/>
     <path d="M10,-11 L8,-16 M8.6,-14 L6.4,-15 M12,-11 L13,-16 M12.8,-14 L15,-15" stroke="#5a3d26" stroke-width=".9"/>
-    ${lead ? '<circle cx="15.6" cy="-8.6" r="3.4" fill="#ff4d4d" opacity=".3" class="twinkle"/>' : ''}<circle cx="15.4" cy="-8.6" r="${lead ? 1.6 : 1}" fill="${lead ? '#e3241b' : '#3a2a1a'}"/>
+    ${lead ? '<g opacity=".3"><circle cx="15.6" cy="-8.6" r="3.4" fill="#ff4d4d" class="twinkle"/></g>' : ''}<circle cx="15.4" cy="-8.6" r="${lead ? 1.6 : 1}" fill="${lead ? '#e3241b' : '#3a2a1a'}"/>
     <circle cx="12.5" cy="-9.8" r=".6" fill="#111"/><path d="M-9,-1 l-3,-1.5" stroke="#f4f1ea" stroke-width="1.6" stroke-linecap="round"/></g>`;
   const SANTA = `<g class="santa-bob">
     ${[0, 1, 2, 3, 4].map(i => `<circle class="twinkle" cx="${-38 - i * 14}" cy="${2 + (i % 2) * 5}" r="${f(1.9 - i * .25)}" fill="#ffe27a" style="animation-delay:-${(i * .3).toFixed(1)}s"/>`).join('')}

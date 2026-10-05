@@ -418,3 +418,8 @@ section { position: relative; }
 .tema-outono .hero-petal { background: linear-gradient(160deg, #e6a83e, #b5521f); border-radius: 0 80% 0 80%; }
 /* inverno: fumaça mais escura, para aparecer sobre os campos brancos de geada */
 .tema-inverno .scene .smoke { fill: #7f8890; }
+/* Semana Farroupilha: no topo cai confete verde, vermelho e amarelo */
+.tema-farroupilha .hero-petal { border-radius: 2px; }
+.tema-farroupilha .hero-petal:nth-child(3n + 1) { background: #1e8f3e; }
+.tema-farroupilha .hero-petal:nth-child(3n + 2) { background: #f1c40f; }
+.tema-farroupilha .hero-petal:nth-child(3n) { background: #d7261e; }

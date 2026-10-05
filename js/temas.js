@@ -28,6 +28,7 @@
     { id: 'anonovo', nome: 'Final de ano', base: ['natal', 'verao'], quando: d => entre(d, 1226, 102) }, // 26/dez a 2/jan: Natal + fogos
     { id: 'natal', nome: 'Natal', base: 'verao', quando: d => entre(d, 1201, 106) },              // 1º/dez a 6/jan (Reis)
     { id: 'pascoa', nome: 'Páscoa', base: 'outono', quando: d => { const k = diasDaPascoa(d); return k >= -14 && k <= 1; } }, // 2 semanas antes até a segunda-feira
+    { id: 'farroupilha', nome: 'Semana Farroupilha', quando: d => entre(d, 914, 920) },       // 14 a 20/set (20 = Dia do Gaúcho)
     { id: 'primavera', nome: 'Primavera', quando: d => entre(d, 923, 1220) },
     { id: 'outono', nome: 'Outono', quando: d => entre(d, 320, 620) },
     { id: 'inverno', nome: 'Inverno', quando: d => entre(d, 621, 922) },
