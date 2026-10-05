@@ -416,3 +416,5 @@ section { position: relative; }
 .tema-sel select { font: inherit; font-weight: 600; color: var(--ink); border: 1px solid var(--olive-soft); border-radius: 999px; padding: 4px 8px; background: #fff; cursor: pointer; }
 /* outono: no topo caem folhas secas em vez das pétalas vermelhas */
 .tema-outono .hero-petal { background: linear-gradient(160deg, #e6a83e, #b5521f); border-radius: 0 80% 0 80%; }
+/* inverno: fumaça mais escura, para aparecer sobre os campos brancos de geada */
+.tema-inverno .scene .smoke { fill: #7f8890; }

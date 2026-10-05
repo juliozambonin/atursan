@@ -58,6 +58,9 @@
     return c;
   }
   const themeGround = str => (OUTONO || INVERNO) ? str.replace(/#[0-9a-fA-F]{6}(?![0-9a-zA-Z])/g, groundColor) : str;
+  // cordilheira do Ágape: no inverno fica verde-acinzentada (geada leve), senão some no chão branco
+  const hillColor = c => { if (!INVERNO) return groundColor(c); const [h, s, l] = toHsl(c); return fromHsl(h + 15, s * .45, l * .92); };
+  const themeHill = str => (OUTONO || INVERNO) ? str.replace(/#[0-9a-fA-F]{6}(?![0-9a-zA-Z])/g, hillColor) : str;
   // copas: amareladas e avermelhadas no outono (em sequência fixa, sem sorteio), um pouco apagadas no inverno
   const AUTUMN = ['#d9a43a', '#c8642d', '#e2b84a', '#b5452a', '#cf8a35', '#a86a2f', '#e0973a'];
   let autumnN = 0;
@@ -85,7 +88,7 @@
 
   // tema do site (js/temas.js): estação do ano e datas festivas. Verão é o visual padrão.
   const TEMA = window.TEMA || { id: 'verao', e: id => id === 'verao' };
-  const NATAL = TEMA.e('natal'), PASCOA = TEMA.e('pascoa'), PRIMAVERA = TEMA.e('primavera'), OUTONO = TEMA.e('outono'), INVERNO = TEMA.e('inverno');
+  const NATAL = TEMA.e('natal'), ANONOVO = TEMA.e('anonovo'), PASCOA = TEMA.e('pascoa'), PRIMAVERA = TEMA.e('primavera'), OUTONO = TEMA.e('outono'), INVERNO = TEMA.e('inverno');
   // As decorações dos temas sorteiam com outra sequência: assim árvores, casas e cores do mapa
   // ficam no mesmo lugar em todos os temas (o mapa principal continua usando a sequência de sempre).
   let tseed = 4242, altOn = false;
@@ -1426,12 +1429,23 @@
   const flatLights = (x0, y0, x1, y1, z) => bulbs([P(x0, y1, z), P(x1, y1, z), P(x1, y0, z)]);
 
   // --- Natal --------------------------------------------------------
+  const GIFT = [['#d7261e', '#ffd23f'], ['#2f8f4e', '#ffffff'], ['#3d7dd9', '#ffd23f'], ['#ffd23f', '#d7261e'], ['#9b59b6', '#ffffff'], ['#ffffff', '#d7261e'], ['#e67e22', '#2f8f4e']];
+  function giftS(k = 0, w = 8, h = 7) {
+    // caixa de presente com fita e laço (vista de frente, com a tampa em perspectiva)
+    const [c, r] = GIFT[k % GIFT.length], hw = w / 2;
+    return `<path d="M${-hw},${-h} L${-hw + 3},${-h - 2.5} L${hw + 3},${-h - 2.5} L${hw},${-h}Z" fill="${shade(c, 1.15)}"/><path d="M${hw},0 L${hw + 3},-2.5 L${hw + 3},${-h - 2.5} L${hw},${-h}Z" fill="${shade(c, .78)}"/>
+      <rect x="${-hw}" y="${-h}" width="${w}" height="${h}" fill="${c}"/><rect x="-.9" y="${-h}" width="1.8" height="${h}" fill="${r}"/><path d="M${hw},${-h * .55} l3,-2.5" stroke="${r}" stroke-width="1.6"/>
+      <ellipse cx="-1.6" cy="${-h - 2}" rx="2" ry="1.3" fill="${r}"/><ellipse cx="1.8" cy="${-h - 2}" rx="2" ry="1.3" fill="${r}"/>`;
+  }
+  const giftPile = k => `${shadowE(11, 3)}<g transform="translate(-5,0)">${giftS(k, 9, 8)}</g><g transform="translate(5,1)">${giftS(k + 2, 7, 5)}</g><g transform="translate(-1,-7)">${giftS(k + 4, 6, 5)}</g>`;
   function xmasTreeS(s = 1) {
     let t = `${shadowE(13, 4)}<rect x="-2.2" y="-8" width="4.4" height="8" fill="#6b4a2b"/><rect x="-6" y="-5" width="12" height="5" rx="1" fill="#c0392b"/>
       <path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L-18,-6 L-9,-16 L-15,-16 L-6,-30 L-11,-30Z" fill="#2f7a3a"/><path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L4,-6Z" fill="#000" opacity=".12"/>`;
     [[-6, -33], [3, -38], [7, -29], [-10, -22], [0, -24], [10, -19], [-13, -11], [-4, -13], [6, -10], [14, -9]]
       .forEach(([x, y], i) => (t += `<circle class="twinkle" cx="${x}" cy="${y}" r="1.8" fill="${XMAS[i % XMAS.length]}" style="animation-delay:-${(i * .29 % 1.6).toFixed(2)}s"/>`));
     t += `<circle cy="-51" r="9" fill="#ffe27a" opacity=".3" class="twinkle"/>${star(-51)}`;
+    // presentes ao pé da árvore
+    t += `<g transform="translate(-12,4)">${giftS(0, 8, 7)}</g><g transform="translate(11,5)">${giftS(2, 7, 6)}</g><g transform="translate(-1,7)">${giftS(4, 9, 5)}</g>`;
     return `<g transform="scale(${s})">${t}</g>`;
   }
   function presepioS() {
@@ -1478,19 +1492,26 @@
     // presépio iluminado junto à igreja e luzes na sananduva da praça
     sprite(792, 574, `<g transform="scale(.8)">${presepioS()}</g>`, 10, 'igreja');
     sprite(746, 746, sananduvaLightsS(.72), 16, 'praca');
+    // presentes espalhados pelas quadras da cidade
+    for (let i = 0, n = 0; i < 500 && n < 34; i++) {
+      const [a, b] = pick(BL), [c, d] = pick(BL), x = rr(a + 3, b - 3), y = rr(c + 3, d - 3);
+      if (!freeSpot(x, y, 5)) continue;
+      sprite(x, y, rnd() < .35 ? giftPile((rnd() * 7) | 0) : `${shadowE(6, 2)}${giftS((rnd() * 7) | 0, rr(6, 9), rr(5, 8))}`, 3); n++;
+    }
   });
 
   // --- Páscoa -------------------------------------------------------
   const EGG = ['#e84393', '#3d7dd9', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#ff8ad8', '#4db8ff'];
-  const eggS = (c1, c2) => `<ellipse rx="3.6" ry="1.3" fill="#000" opacity=".15"/><path d="M0,-9 C3.2,-9 4,-4.5 4,-3 C4,-.6 2.2,.6 0,.6 C-2.2,.6 -4,-.6 -4,-3 C-4,-4.5 -3.2,-9 0,-9Z" fill="${c1}"/>
+  const eggS = (c1, c2, sh = true) => `${sh ? '<ellipse rx="3.6" ry="1.3" fill="#000" opacity=".15"/>' : ''}<path d="M0,-9 C3.2,-9 4,-4.5 4,-3 C4,-.6 2.2,.6 0,.6 C-2.2,.6 -4,-.6 -4,-3 C-4,-4.5 -3.2,-9 0,-9Z" fill="${c1}"/>
     <path d="M-3.9,-4.2 Q0,-2.4 3.9,-4.2 L3.7,-2.6 Q0,-.9 -3.7,-2.6Z" fill="${c2}"/><circle cx="-1.4" cy="-6.6" r=".8" fill="#fff" opacity=".7"/>`;
   function crossS() {
-    // cruz de madeira com o manto roxo da Quaresma
+    // cruz de madeira com o manto roxo da Quaresma; no domingo e na segunda de Páscoa o manto fica branco
+    const [m1, m2, m3] = TEMA.ressurreicao ? ['#f4f1ea', '#ffffff', '#d9d3c6'] : ['#6c2d91', '#8e44ad', '#4e1f6b'];
     return `${shadowE(16, 5)}<path d="M-12,0 Q-10,-6 0,-6 Q10,-6 12,0Z" fill="#9a8f84"/>
       <rect x="-3" y="-86" width="6" height="82" fill="#6b4a2b"/><rect x="-3" y="-86" width="2" height="82" fill="#82603d"/>
       <rect x="-24" y="-68" width="48" height="6" fill="#6b4a2b"/><rect x="-24" y="-68" width="48" height="2" fill="#82603d"/>
-      <path d="M-20,-69 Q0,-61 20,-69 L18,-38 Q16,-34 13,-38 L9,-60 Q0,-57 -9,-60 L-13,-38 Q-16,-34 -18,-38Z" fill="#6c2d91"/>
-      <path d="M-20,-69 Q0,-61 20,-69 L19.4,-64 Q0,-57 -19.4,-64Z" fill="#8e44ad"/><path d="M-15,-58 L-16,-40 M15,-58 L16,-40" stroke="#4e1f6b" stroke-width="1"/>`;
+      <path d="M-20,-69 Q0,-61 20,-69 L18,-38 Q16,-34 13,-38 L9,-60 Q0,-57 -9,-60 L-13,-38 Q-16,-34 -18,-38Z" fill="${m1}"/>
+      <path d="M-20,-69 Q0,-61 20,-69 L19.4,-64 Q0,-57 -19.4,-64Z" fill="${m2}"/><path d="M-15,-58 L-16,-40 M15,-58 L16,-40" stroke="${m3}" stroke-width="1"/>`;
   }
   function chocolateS() {
     // oficina dos coelhos: panela de chocolate derretido, ovos na mesa e coelhos de touca de cozinheiro
@@ -1516,6 +1537,12 @@
     }
     // Dallas: coelhos fabricando ovos de chocolate
     sprite(470, 1160, chocolateS(), 14, 'dallas');
+    // coelhos pulando pela cidade e pelo campo, com um ovo de Páscoa nas costas
+    for (const [path, c] of [[[[852, 809], [978, 809]], '#f4f1ea'], [[[515, 811], [636, 811]], '#d9c3a5'], [[[809, 852], [809, 978]], '#b88a62'],
+      [[[688, 760], [688, 800]], '#f4f1ea'], [[[600, 1060], [700, 1100]], '#8d8d8d'], [[[880, 1080], [960, 1060]], '#f4f1ea'], [[[1000, 700], [1000, 790]], '#d9c3a5']]) {
+      const egg = `<g transform="translate(-1.5,-8.6) rotate(-18) scale(.62)">${eggS(pick(EGG), pick(EGG), false)}</g>`;
+      mover({ kind: 'sprite', path, mode: 'ping', speed: rr(9, 13), s: .9, inner: rabbit(c, egg), r: 3 });
+    }
   });
 
   // --- Primavera ----------------------------------------------------
@@ -1615,7 +1642,7 @@
         <circle cy="-31" r="12" fill="#fff"/>${d.icon && ICONS[d.icon] ? ICONS[d.icon] : `<text y="-25.5" text-anchor="middle" font-size="15">${d.emoji}</text>`}</g></g></g>`;
   }
 
-  svg.innerHTML = `<defs>${defs.replace(/<linearGradient id="mtG".*?<\/linearGradient>/, themeGround)}</defs>${BG}<g>${themeGround(G)}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="mist" pointer-events="none">${MIST}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
+  svg.innerHTML = `<defs>${defs.replace(/<linearGradient id="mtG".*?<\/linearGradient>/, themeHill)}</defs>${BG}<g>${themeGround(G)}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="mist" pointer-events="none">${MIST}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
 
   // ==================================================================
   // animação por JS
@@ -1708,7 +1735,7 @@
     fx.appendChild(g);
     circlers.push({ g, c: fk.c, rx: fk.rx * rr(.6, 1.1), ry: fk.ry * rr(.6, 1.2), sp: rr(.35, .6) * (i % 2 ? 1 : -1), ph: rr(0, 6.28), dz: rr(-20, 20) });
   }
-  const bees = beeCenters.slice(0, 16).map(c => {
+  const bees = (INVERNO ? [] : beeCenters.slice(0, 16)).map(c => { // no inverno as abelhas ficam recolhidas nas colmeias
     const g = document.createElementNS(NS, 'g');
     g.innerHTML = `<ellipse rx="2.6" ry="1.8" fill="#f7c81e"/><path d="M-.6,-1.8 V1.8 M1,-1.6 V1.6" stroke="#222" stroke-width=".7"/><g class="bee-wing"><ellipse cx="-.4" cy="-2.6" rx="1.8" ry="1.1" fill="#fff" opacity=".9"/></g>`;
     fx.appendChild(g);
@@ -1777,6 +1804,28 @@
     })(start);
   }
 
+  // Final de ano: fogos de artifício subindo e estourando pelo mapa
+  const FOGO = ['#ff4d4d', '#ffd23f', '#4dd36b', '#4db8ff', '#ff8ad8', '#ffffff', '#ffa94d', '#b48cff'];
+  function firework() {
+    const x = rr(160, W - 160), y = rr(160, H - 420), c1 = pick(FOGO), c2 = pick(FOGO), n = 28 + ((rnd() * 10) | 0), R = rr(85, 135);
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('transform', `translate(${f(x)},${f(y)})`);
+    g.innerHTML = `<path d="M0,0 V180" stroke="${c1}" stroke-width="4" stroke-linecap="round" opacity=".9"/><circle r="9" fill="#fff"/>`
+      + Array.from({ length: n }, (_, i) => `<circle r="${f(rr(4, 6))}" fill="${i % 3 ? c1 : c2}" data-a="${f(i / n * 6.283 + rr(-.1, .1))}" data-r="${f(R * rr(.75, 1.1))}" opacity="0"/>`).join('');
+    fx.appendChild(g);
+    const [trail, flash, ...sparks] = g.children;
+    // o rojão sobe (rastro encurtando) e estoura: clarão e faíscas que se abrem e caem
+    trail.animate([{ transform: 'translateY(180px) scaleY(.2)', opacity: 0 }, { transform: 'translateY(30px) scaleY(.6)', opacity: 1, offset: .7 }, { transform: 'translateY(0) scaleY(0)', opacity: 0 }], { duration: 650, easing: 'ease-out', fill: 'forwards' });
+    flash.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(0)', opacity: 0, offset: .45 }, { transform: 'scale(3)', opacity: .9, offset: .55 }, { transform: 'scale(5)', opacity: 0 }], { duration: 1200, fill: 'forwards' });
+    for (const sp of sparks) {
+      const a = +sp.dataset.a, r = +sp.dataset.r, dx = Math.cos(a) * r, dy = Math.sin(a) * r;
+      sp.animate([{ transform: 'translate(0,0)', opacity: 0 }, { transform: 'translate(0,0)', opacity: 1, offset: .32 },
+        { transform: `translate(${f(dx * .8)}px,${f(dy * .8)}px)`, opacity: 1, offset: .62 }, { transform: `translate(${f(dx)}px,${f(dy + 40)}px) scale(.4)`, opacity: 0 }],
+        { duration: 2000, delay: 450, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' });
+    }
+    setTimeout(() => g.remove(), 2700);
+  }
+
   function fxFrame(t) {
     for (const b of birds) {
       const span = W + 300, x = ((b.ph * 10 + t * Math.abs(b.sp)) % span);
@@ -1812,6 +1861,10 @@
     (function fishLoop() {
       if (visibleNow && document.visibilityState === 'visible') jumpFish();
       setTimeout(fishLoop, rr(1200, 2600));
+    })();
+    if (ANONOVO) (function fogos() {
+      if (visibleNow && document.visibilityState === 'visible') { firework(); if (rnd() < .35) setTimeout(firework, rr(150, 450)); }
+      setTimeout(fogos, rr(700, 1800));
     })();
     if (NATAL) setTimeout(function santaLoop() {
       if (visibleNow && document.visibilityState === 'visible') flySanta();

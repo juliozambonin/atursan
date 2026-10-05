@@ -3,9 +3,10 @@
 // Para criar um tema novo, acrescente um item em TEMAS:
 //   id     — nome curto, usado no endereço (?tema=id), no CSS (classe tema-id no <html>) e no mapa (TEMA.e('id'))
 //   nome   — como aparece no seletor
-//   base   — (opcional) estação usada por baixo do tema festivo (ex.: o Natal usa o visual de verão)
+//   base   — (opcional) tema(s) usados por baixo (ex.: o Natal usa o verão; o Final de ano usa o Natal e o verão)
 //   quando — função que recebe a data e diz se o tema vale nela
 // A ordem é a prioridade: vale o primeiro tema cuja data bate (datas festivas antes das estações).
+// Para conferir outra data, use ?data=AAAA-MM-DD no endereço (ou o campo de data do seletor).
 (function () {
   const md = d => (d.getMonth() + 1) * 100 + d.getDate(); // 1225 = 25 de dezembro
   // entre(d, 1201, 106): de 1º/dez a 6/jan (atravessa a virada do ano)
@@ -24,6 +25,7 @@
   const diasDaPascoa = d => Math.round((dia(d) - pascoa(d.getFullYear())) / 864e5);
 
   const TEMAS = [
+    { id: 'anonovo', nome: 'Final de ano', base: ['natal', 'verao'], quando: d => entre(d, 1226, 102) }, // 26/dez a 2/jan: Natal + fogos
     { id: 'natal', nome: 'Natal', base: 'verao', quando: d => entre(d, 1201, 106) },              // 1º/dez a 6/jan (Reis)
     { id: 'pascoa', nome: 'Páscoa', base: 'outono', quando: d => { const k = diasDaPascoa(d); return k >= -14 && k <= 1; } }, // 2 semanas antes até a segunda-feira
     { id: 'primavera', nome: 'Primavera', quando: d => entre(d, 923, 1220) },
@@ -35,32 +37,46 @@
   // seletor para a associação validar os temas (troque para false para esconder)
   const MOSTRAR_SELETOR = true;
 
-  const hoje = TEMAS.find(t => t.quando(new Date()));
-  let escolhido = null;
-  try { escolhido = new URLSearchParams(location.search).get('tema'); } catch (e) { /* sem parâmetros */ }
-  const tema = TEMAS.find(t => t.id === escolhido) || hoje;
+  let escolhido = null, dataSim = null;
+  try {
+    const q = new URLSearchParams(location.search);
+    escolhido = q.get('tema');
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(q.get('data') || '');
+    if (m) dataSim = new Date(+m[1], +m[2] - 1, +m[3]);
+  } catch (e) { /* sem parâmetros */ }
+  const agora = dataSim || new Date();
+  const doDia = TEMAS.find(t => t.quando(agora));
+  const tema = TEMAS.find(t => t.id === escolhido) || doDia;
+  const bases = [].concat(tema.base || []);
 
   window.TEMAS = TEMAS;
   window.TEMA = {
-    id: tema.id, nome: tema.nome, base: tema.base || tema.id, auto: tema === hoje && !escolhido,
-    e: id => id === tema.id || id === tema.base // TEMA.e('outono') vale no outono e na Páscoa (que usa o outono como base)
+    id: tema.id, nome: tema.nome, bases, data: agora,
+    // TEMA.e('natal') vale no Natal e no Final de ano (que usa o Natal como base)
+    e: id => id === tema.id || bases.includes(id),
+    // domingo e segunda de Páscoa: o manto da cruz fica branco (Ressurreição)
+    ressurreicao: [0, 1].includes(diasDaPascoa(agora))
   };
-  document.documentElement.classList.add('tema-' + tema.id);
-  if (tema.base) document.documentElement.classList.add('tema-' + tema.base);
+  for (const id of [tema.id, ...bases]) document.documentElement.classList.add('tema-' + id);
 
   if (!MOSTRAR_SELETOR) return;
   function seletor() {
     const box = document.createElement('div');
     box.className = 'tema-sel';
-    const opts = [`<option value="">Automático (hoje: ${hoje.nome})</option>`]
+    const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const opts = [`<option value="">Automático (${dataSim ? 'em ' + agora.toLocaleDateString('pt-BR') : 'hoje'}: ${doDia.nome})</option>`]
       .concat(TEMAS.map(t => `<option value="${t.id}"${t.id === escolhido ? ' selected' : ''}>${t.nome}</option>`));
-    box.innerHTML = `<label><span>Tema</span><select aria-label="Tema do site">${opts.join('')}</select></label>`;
-    box.querySelector('select').addEventListener('change', e => {
+    box.innerHTML = `<label><span>Tema</span><select aria-label="Tema do site">${opts.join('')}</select></label>
+      <label class="tema-data" title="Simular uma data (o tema automático segue esta data)"><span>Data</span><input type="date" aria-label="Simular data" value="${dataSim ? iso(dataSim) : ''}"></label>`;
+    const go = (k, v) => {
       const u = new URL(location.href);
-      if (e.target.value) u.searchParams.set('tema', e.target.value); else u.searchParams.delete('tema');
+      if (v) u.searchParams.set(k, v); else u.searchParams.delete(k);
+      if (k === 'data') u.searchParams.delete('tema'); // ao simular uma data, volta ao automático
       u.hash = 'explore'; // volta direto para o mapa
       location.href = u.toString();
-    });
+    };
+    box.querySelector('select').addEventListener('change', e => go('tema', e.target.value));
+    box.querySelector('input').addEventListener('change', e => go('data', e.target.value));
     document.body.appendChild(box);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', seletor); else seletor();
