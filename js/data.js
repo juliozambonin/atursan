@@ -1,5 +1,5 @@
 // Atrativos de Sananduva — textos para a ATURSAN revisar e completar.
-// img: foto (preenche o card; pos: enquadramento, ex. 'center 80%') · logo: logotipo (exibido inteiro, sobre fundo claro)
+// img: foto (preenche o card; pos: enquadramento, ex. 'center 80%') · logo: logotipo (exibido inteiro, sobre fundo claro; logoBg: cor de fundo, se o logo não for branco)
 // Sem img/logo, o card usa o emoji sobre o gradiente.
 window.ATRATIVOS = [
   {
@@ -109,8 +109,8 @@ window.ATRATIVOS = [
   {
     id: 'flora', area: 'Interior', title: 'Flora',
     emoji: '🕯️', bg: 'linear-gradient(135deg,#f7dbe4,#b9879a)',
-    logo: 'assets/img/parceiros/flora.png',
-    short: 'Yoga ao ar livre e velas perfumadas artesanais.',
-    text: 'Práticas de yoga em um deck no meio do verde, com o aroma das velas perfumadas e dos produtos artesanais da Flora.'
+    logo: 'assets/img/parceiros/flora.webp', logoBg: '#eee0c6',
+    short: 'Yoga numa clareira cercada de árvores e produtos artesanais.',
+    text: 'No interior, a sudoeste da cidade, uma estrada de chão que sai da Vicato leva até a Flora. Ali, as práticas de yoga acontecem num deck numa clareira cercada de árvores, com o aroma das velas perfumadas e dos produtos artesanais da casa.'
   }
 ];

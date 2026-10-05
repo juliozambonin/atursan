@@ -461,6 +461,7 @@
   road([[1060, 1036], [1060, 150], [1016, 150]], 24);    // Fazenda Fracasso e Belusso
   road([[1072, 470], [1102, 470]], 20);
   road([[1262, 1236], [1540, 878]], 24);                              // acesso à Kaskata
+  road([[773, 1012], [773, 1208]], 20);                               // da Vicato até a Flora (sudoeste)
   // bocas de asfalto onde as rodovias (diagonais no mapa) encontram as esquinas da cidade:
   // sem os triângulos de grama entre o fim da rodovia e as ruas
   RDL.surf += poly([P(958, 1018), P(1042, 1062), P(1062, 1042), P(1018, 958)], '#686c73');
@@ -647,35 +648,8 @@
     pin('majestade', 560, 930, 62);
   }
 
-  // --- Flora: yoga e velas perfumadas (parte mais a leste da cidade) ---
-  {
-    G += quad(854, 514, 976, 636, '#a8d47c');
-    let shop = house(858, 516, 46, 26, 18, '#fdf6f0', '#c06c84', 'x');
-    shop += `<g transform="${fl(858, 542, 18)}"><rect x="6" y="1" width="34" height="7.5" rx="1.5" fill="#fff"/><text x="23" y="7" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="5.4" fill="#1d1d1d" letter-spacing=".8">FLORA</text><circle cx="37" cy="3.6" r="1.8" fill="#c0392b"/></g>`;
-    add(858, 516, 904, 542, shop, 'flora');
-    let dk = box(856, 556, 96, 64, 4, '#c49564');
-    const mats = [[872, 590, '#9b59b6'], [896, 590, '#1abc9c'], [920, 590, '#e67e22'], [944, 590, '#3d7dd9']];
-    for (const [x, y, c] of mats) dk += quad(x - 9, y - 4, x + 9, y + 4, c, '', 4);
-    const sk = '#f1c7a0';
-    const yogi = [
-      `<path d="M0,-12 L0,0" stroke="#34495e" stroke-width="3.6" stroke-linecap="round"/><path d="M0,-12 L6,-7 L1,-4" stroke="#34495e" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="#9b59b6"/><path d="M-2,-24 L-1,-40 M2,-24 L1,-40" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/><circle cx="0" cy="-30.5" r="4.8" fill="${sk}"/><path d="M-5,-31 A5,5 0 0 1 5,-32 Q1,-34 -2,-31 Q-3,-27 -1,-22 L-5.5,-23Z" fill="#5a3a22"/>`,
-      `<path d="M-2,-12 L-3,0 M2,-12 L3,0" stroke="#2c3e50" stroke-width="3.6" stroke-linecap="round"/><rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="#1abc9c"/><g class="arms-up" style="transform-origin:-2px -23px"><path d="M-2,-23 L-4,-13" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/></g><g class="arms-up-r" style="transform-origin:2px -23px"><path d="M2,-23 L4,-13" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="0" cy="-30.5" r="4.8" fill="${sk}"/><path d="M-5,-30.5 A5,5 0 0 1 5,-32 Q1,-34.5 -3,-32 Q-4.5,-30.5 -3.5,-28.5 L-5.2,-28.5Z" fill="#1a1a1a"/>`,
-      `<g class="breathe" style="transform-origin:0px 0px"><path d="M-9,-1 Q0,-6 9,-1" stroke="#7f8c8d" stroke-width="4" fill="none" stroke-linecap="round"/><rect x="-4.5" y="-17" width="9" height="14" rx="3" fill="#e67e22"/><path d="M-3,-14 L-8,-5 M3,-14 L8,-5" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/><circle cx="0" cy="-21.5" r="4.8" fill="${sk}"/><circle cx="0" cy="-27" r="2.6" fill="#2b1d14"/><path d="M-5,-22 A5,5 0 0 1 5,-22 Q0,-24.5 -5,-22Z" fill="#2b1d14"/></g>`,
-      `<path d="M0,-12 L-9,0 M0,-12 L6,-6 L7,0" stroke="#34495e" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="#3d7dd9"/><path d="M-13,-22 L13,-22" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/><circle cx="0" cy="-30.5" r="4.8" fill="${sk}"/><path d="M-5,-30.5 A5,5 0 0 1 5,-32 Q1,-34.5 -3,-32 Q-4.5,-30.5 -3.5,-28.5 L-5.2,-28.5Z" fill="#c9a063"/>`
-    ];
-    mats.forEach(([x, y], i) => (dk += at(x, y, 4, yogi[i], PS * 1.05)));
-    for (const [x, y] of [[862, 616], [888, 616], [914, 616], [940, 616], [948, 566], [948, 596]]) {
-      dk += at(x, y, 4, `<g transform="translate(-4,0)">${candle(8)}</g><g transform="translate(3,1)">${candle(11)}</g><g transform="translate(0,3)">${candle(6)}</g>
-        <path class="steam" style="${neg(2)}" d="M0,-18 q-3,-5 0,-10 q3,-5 0,-10" stroke="#e8d7f0" stroke-width="1.2" fill="none"/>`, .5);
-    }
-    add(856, 556, 952, 620, dk, 'flora');
-    sprite(930, 528, treeS(.85, '#4f8a35'), 8, 'flora');
-    sprite(966, 600, treeS(.8, '#f4a6c6', { blossom: '#fff' }), 8, 'flora');
-    pin('flora', 904, 588, 62);
-  }
-
   // demais quadras: casas
-  fillBlockC(848, 678, 982, 812); fillBlockC(848, 848, 982, 982);
+  fillBlockC(848, 508, 982, 642); fillBlockC(848, 678, 982, 812); fillBlockC(848, 848, 982, 982);
 
   // --- Vicato (na cidade, ao lado da Majestade) ---
   {
@@ -867,6 +841,52 @@
     mover({ kind: 'veh', path: ellipsePath(cx, cy, 40, 34, 28), speed: 8, v: KAYAK, spot: 'moterle', r: 5 });
     pin('moterle', cx, cy, 52);
   }
+
+  // ==================================================================
+  // SUDOESTE — Flora: yoga e velas perfumadas, numa clareira cercada de árvores.
+  // Acesso pela estrada de chão que sai da Vicato. O bloco usa as coordenadas
+  // locais de antes (quando ficava na cidade), deslocadas para o sudoeste.
+  // ==================================================================
+  origin(-64, 660);
+  {
+    const cx = 904, cy = 572;
+    reserve(cx - 140, cy - 130, cx + 140, cy + 130);
+    G += `<path d="${blob(cx, cy, 108, 96, 18, .06)}" fill="#8fc463"/><path d="${blob(cx, cy, 98, 86, 18, .05)}" fill="#a8d47c"/>`;
+    let shop = house(858, 516, 46, 26, 18, '#fdf6f0', '#c06c84', 'x');
+    shop += `<g transform="${fl(858, 542, 18)}"><rect x="6" y="1" width="34" height="7.5" rx="1.5" fill="#fff"/><text x="23" y="7" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="5.4" fill="#1d1d1d" letter-spacing=".8">FLORA</text><circle cx="37" cy="3.6" r="1.8" fill="#c0392b"/></g>`;
+    add(858, 516, 904, 542, shop, 'flora');
+    let dk = box(856, 556, 96, 64, 4, '#c49564');
+    const mats = [[872, 590, '#9b59b6'], [896, 590, '#1abc9c'], [920, 590, '#e67e22'], [944, 590, '#3d7dd9']];
+    for (const [x, y, c] of mats) dk += quad(x - 9, y - 4, x + 9, y + 4, c, '', 4);
+    const sk = '#f1c7a0';
+    const yogi = [
+      `<path d="M0,-12 L0,0" stroke="#34495e" stroke-width="3.6" stroke-linecap="round"/><path d="M0,-12 L6,-7 L1,-4" stroke="#34495e" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="#9b59b6"/><path d="M-2,-24 L-1,-40 M2,-24 L1,-40" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/><circle cx="0" cy="-30.5" r="4.8" fill="${sk}"/><path d="M-5,-31 A5,5 0 0 1 5,-32 Q1,-34 -2,-31 Q-3,-27 -1,-22 L-5.5,-23Z" fill="#5a3a22"/>`,
+      `<path d="M-2,-12 L-3,0 M2,-12 L3,0" stroke="#2c3e50" stroke-width="3.6" stroke-linecap="round"/><rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="#1abc9c"/><g class="arms-up" style="transform-origin:-2px -23px"><path d="M-2,-23 L-4,-13" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/></g><g class="arms-up-r" style="transform-origin:2px -23px"><path d="M2,-23 L4,-13" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="0" cy="-30.5" r="4.8" fill="${sk}"/><path d="M-5,-30.5 A5,5 0 0 1 5,-32 Q1,-34.5 -3,-32 Q-4.5,-30.5 -3.5,-28.5 L-5.2,-28.5Z" fill="#1a1a1a"/>`,
+      `<g class="breathe" style="transform-origin:0px 0px"><path d="M-9,-1 Q0,-6 9,-1" stroke="#7f8c8d" stroke-width="4" fill="none" stroke-linecap="round"/><rect x="-4.5" y="-17" width="9" height="14" rx="3" fill="#e67e22"/><path d="M-3,-14 L-8,-5 M3,-14 L8,-5" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/><circle cx="0" cy="-21.5" r="4.8" fill="${sk}"/><circle cx="0" cy="-27" r="2.6" fill="#2b1d14"/><path d="M-5,-22 A5,5 0 0 1 5,-22 Q0,-24.5 -5,-22Z" fill="#2b1d14"/></g>`,
+      `<path d="M0,-12 L-9,0 M0,-12 L6,-6 L7,0" stroke="#34495e" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="#3d7dd9"/><path d="M-13,-22 L13,-22" stroke="${sk}" stroke-width="2.4" stroke-linecap="round"/><circle cx="0" cy="-30.5" r="4.8" fill="${sk}"/><path d="M-5,-30.5 A5,5 0 0 1 5,-32 Q1,-34.5 -3,-32 Q-4.5,-30.5 -3.5,-28.5 L-5.2,-28.5Z" fill="#c9a063"/>`
+    ];
+    mats.forEach(([x, y], i) => (dk += at(x, y, 4, yogi[i], PS * 1.05)));
+    for (const [x, y] of [[862, 616], [888, 616], [914, 616], [940, 616], [948, 566], [948, 596]]) {
+      dk += at(x, y, 4, `<g transform="translate(-4,0)">${candle(8)}</g><g transform="translate(3,1)">${candle(11)}</g><g transform="translate(0,3)">${candle(6)}</g>
+        <path class="steam" style="${neg(2)}" d="M0,-18 q-3,-5 0,-10 q3,-5 0,-10" stroke="#e8d7f0" stroke-width="1.2" fill="none"/>`, .5);
+    }
+    add(856, 556, 952, 620, dk, 'flora');
+    sprite(930, 528, treeS(.85, '#4f8a35'), 8, 'flora');
+    sprite(966, 600, treeS(.8, '#f4a6c6', { blossom: '#fff' }), 8, 'flora');
+    // bosque em volta da clareira (na frente, para quem olha o mapa, árvores mais baixas para não esconder o deck)
+    for (let i = 0; i < 30; i++) {
+      const a = i * 12 + rr(-4, 4), r = rr(112, 128);
+      const x = cx + Math.cos(rad(a)) * r, y = cy + Math.sin(rad(a)) * r * .92;
+      const [wx, wy] = Wd(x, y);
+      if (nearRoad(wx, wy, 10)) continue;
+      const k = rnd(), front = a > 15 && a < 75;
+      sprite(x, y, front ? treeS(rr(.62, .74), pick(['#4f8a35', '#5e9a3c', '#6aa846']), k < .3 ? { blossom: '#f4a6c6' } : {})
+        : k < .3 ? araucariaS(rr(.5, .66)) : k < .42 ? pineS(rr(.8, 1)) : treeS(rr(.85, 1.08), pick(['#3f7a2c', '#4f8a35', '#5e9a3c', '#356f30']), k > .85 ? { blossom: '#f4a6c6' } : {}), 9, 'flora');
+    }
+    flocks.push({ c: P(cx, cy, 80), rx: 90, ry: 30, n: 4 });
+    pin('flora', 904, 588, 62);
+  }
+  origin();
 
   // ==================================================================
   // NORTE — Pousada Angico, junto da rodovia

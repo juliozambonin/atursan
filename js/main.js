@@ -45,10 +45,10 @@
 
   function media(d) {
     if (d.img) return `<img src="${d.img}" alt="${d.title}" loading="lazy"${d.pos ? ` style="object-position:${d.pos}"` : ''}>`;
-    if (d.logo) return `<img class="logo-img" src="${d.logo}" alt="Logo ${d.title}" loading="lazy">`;
+    if (d.logo) return `<img class="logo-img" src="${d.logo}" alt="Logo ${d.title}" loading="lazy"${d.logoBg ? ` style="background:${d.logoBg}"` : ''}>`;
     return `<span class="card-emoji" aria-hidden="true">${d.emoji}</span>`;
   }
-  const mediaBg = d => (d.logo && !d.img ? '#fff' : d.bg);
+  const mediaBg = d => (d.logo && !d.img ? d.logoBg || '#fff' : d.bg);
 
   cards.innerHTML = data.map(d => `
     <button class="card" data-spot="${d.id}">
