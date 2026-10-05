@@ -736,9 +736,9 @@
     for (const [x, y, s] of [[205, 850, .36], [232, 806, .32], [268, 800, .3], [330, 770, .3], [462, 796, .32], [530, 832, .34], [574, 868, .3], [292, 880, .36], [356, 905, .36], [440, 912, .34]]) m += `<g transform="translate(${x},${y}) scale(${s})">${araucariaS(1)}</g>`;
     // tapete de nuvens: da metade da colina até a borda oeste do mapa (camada MIST, desenhada por cima dos objetos)
     {
-      const ox = CX - 1200, oy = CY - 170, yc = 850; // altura da metade da colina (coordenadas do desenho do morro)
+      const ox = CX - 1200, oy = CY - 170, yc = 808; // um pouco acima da metade da colina, sem chegar na Vivaflor (coordenadas do desenho do morro)
       let back = '', front = '';
-      for (let x = -ox - 40; x < 640; x += 22) {
+      for (let x = -ox - 40; x < 550; x += 22) { // mais alto, a colina é mais estreita: a faixa termina antes da encosta leste
         // a oeste da colina o tapete é largo e fofo; sobre a colina vira uma faixa que abraça a encosta
         const k = x < 200 ? 1 : x < 330 ? 1 - (x - 200) / 130 : 0, top = 6 + 22 * k, bot = 6 + 34 * k;
         back += `<circle cx="${f(x + rr(-6, 6))}" cy="${f(yc - top + rr(0, 6))}" r="${f(rr(12, 18) + 8 * k)}"/>`;
