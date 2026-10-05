@@ -415,6 +415,7 @@
   // Cidade no centro; rodovias asfaltadas sul–norte e cidade–noroeste.
   // ==================================================================
   let G = '';
+  let MIST = ''; // tapete de nuvens a oeste (fica por cima dos objetos)
   G += `<rect x="0" y="290" width="${W}" height="${H - 290}" fill="#7fb257"/>`;
 
   const CITY = { x0: 472, x1: 1018, y0: 472, y1: 1018 };
@@ -733,10 +734,21 @@
     m += `<path d="M598,866 L505,882 L560,830 L470,815 L520,785 L452,762 L478,722 L430,690 L410,660" stroke="#d9c79c" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
     m += `<path d="M598,866 L505,882 L560,830 L470,815 L520,785 L452,762 L478,722 L430,690 L410,660" stroke="#efe2bf" stroke-width="1.5" fill="none" stroke-dasharray="6 8"/>`;
     for (const [x, y, s] of [[205, 850, .36], [232, 806, .32], [268, 800, .3], [330, 770, .3], [462, 796, .32], [530, 832, .34], [574, 868, .3], [292, 880, .36], [356, 905, .36], [440, 912, .34]]) m += `<g transform="translate(${x},${y}) scale(${s})">${araucariaS(1)}</g>`;
-    // tapete de nuvens pelas encostas
-    let mist = '';
-    for (let i = 0; i < 16; i++) mist += `<ellipse cx="${f(150 + i * 30 + rr(-8, 8))}" cy="${f(rr(842, 858))}" rx="${f(rr(26, 40))}" ry="${f(rr(10, 16))}"/>`;
-    m += `<g fill="#ffffff" opacity=".62">${mist}</g>`;
+    // tapete de nuvens: da metade da colina até a borda oeste do mapa (camada MIST, desenhada por cima dos objetos)
+    {
+      const ox = CX - 1200, oy = CY - 170, yc = 850; // altura da metade da colina (coordenadas do desenho do morro)
+      let back = '', front = '';
+      for (let x = -ox - 40; x < 640; x += 22) {
+        // a oeste da colina o tapete é largo e fofo; sobre a colina vira uma faixa que abraça a encosta
+        const k = x < 200 ? 1 : x < 330 ? 1 - (x - 200) / 130 : 0, top = 6 + 22 * k, bot = 6 + 34 * k;
+        back += `<circle cx="${f(x + rr(-6, 6))}" cy="${f(yc - top + rr(0, 6))}" r="${f(rr(12, 18) + 8 * k)}"/>`;
+        back += `<ellipse cx="${f(x + 11 + rr(-6, 6))}" cy="${f(yc - top * .5)}" rx="${f(rr(26, 40))}" ry="${f(rr(10, 15))}"/>`;
+        front += `<ellipse cx="${f(x + rr(-6, 6))}" cy="${f(yc + rr(-2, 6))}" rx="${f(rr(24, 40))}" ry="${f(rr(9, 14))}"/>`;
+        if (k > 0) front += `<ellipse cx="${f(x + 11 + rr(-6, 6))}" cy="${f(yc + bot * rr(.55, .8))}" rx="${f(rr(28, 44))}" ry="${f(rr(10, 16) * (.6 + .4 * k))}"/>`;
+      }
+      MIST += `<g transform="translate(${ox},${oy})"><g fill="#ffffff" opacity=".72">${back}</g><g fill="#ffffff" opacity=".88">${front}</g>
+        <path d="M${-ox - 60},${yc - 14} H200 Q265,${yc - 10} 330,${yc - 3} V${yc + 8} Q265,${yc + 22} 200,${yc + 30} H${-ox - 60}Z" fill="#ffffff" opacity=".6"/></g>`;
+    }
     // pavilhão no alto e pessoas vendo o sol nascer (a leste)
     m += `<g transform="translate(405,652) scale(.8)"><ellipse cx="0" cy="2" rx="34" ry="9" fill="#c49564"/><ellipse cx="0" cy="0" rx="32" ry="8" fill="#d8ab78"/>
       <path d="M-24,0 V-26 M24,0 V-26 M-10,3 V-24 M10,3 V-24" stroke="#7a5232" stroke-width="2.4"/>
@@ -1302,6 +1314,8 @@
   for (let i = 0; i < 240; i++) {
     const x = rr(-760, 2160), y = rr(-660, 2160);
     if (!visible(x, y, 40) || x + y < 480 || !isFree(x, y, 22)) continue;
+    const [sx, sy] = P(x, y);
+    if (((sx - 530) / 245) ** 2 + ((sy - 940) / 190) ** 2 < 1) continue; // colina do Espaço Ágape (tem as araucárias dela)
     const k = rnd();
     sprite(x, y, k < .3 ? araucariaS(rr(.5, .72)) : k < .45 ? pineS(rr(.7, 1)) : treeS(rr(.7, 1.02), pick(['#4f8a35', '#5e9a3c', '#6aa846', '#3f7a2c'])), 9);
     reserve(x - 6, y - 6, x + 6, y + 6);
@@ -1381,7 +1395,7 @@
         <circle cy="-31" r="12" fill="#fff"/>${d.icon && ICONS[d.icon] ? ICONS[d.icon] : `<text y="-25.5" text-anchor="middle" font-size="15">${d.emoji}</text>`}</g></g></g>`;
   }
 
-  svg.innerHTML = `<defs>${defs}</defs>${BG}<g>${G}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
+  svg.innerHTML = `<defs>${defs}</defs>${BG}<g>${G}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="mist" pointer-events="none">${MIST}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
 
   // ==================================================================
   // animação por JS
