@@ -1,116 +1,134 @@
 // Atrativos de Sananduva — textos para a ATURSAN revisar e completar.
 // img: foto (preenche o card; pos: enquadramento, ex. 'center 80%') · logo: logotipo (exibido inteiro, sobre fundo claro; logoBg: cor de fundo, se o logo não for branco)
 // Sem img/logo, o card usa o emoji sobre o gradiente.
+// text: resumo exibido ao abrir o local · instagram: só o usuário, sem @ (ex. 'camping_kaskata') · telefone: como deve aparecer, ex. '(54) 99999-9999'
+// Campos de contato vazios aparecem como "a preencher".
 window.ATRATIVOS = [
   {
     id: 'igreja', area: 'Cidade', title: 'Igreja Matriz',
     emoji: '⛪', bg: 'linear-gradient(135deg,#f3dc8f,#e2b84f)',
     img: 'assets/img/igreja-matriz.png',
     short: 'O cartão-postal do centro, com sua torre e vitrais.',
-    text: 'No coração da cidade, a igreja é o principal cartão-postal de Sananduva. A torre esguia, as janelas em arco com vitrais coloridos e o sino que marca o ritmo do centro fazem dela parada obrigatória para quem visita.'
+    text: 'Principal cartão-postal de Sananduva, no coração da cidade. Torre esguia, vitrais coloridos e o sino que marca o ritmo do centro.',
+    instagram: '', telefone: ''
   },
   {
     id: 'praca', area: 'Cidade', title: 'Praça da Sananduva',
     emoji: '🌳', bg: 'linear-gradient(135deg,#ff8a6b,#d7261e)',
     img: 'assets/img/arvore-sananduva.webp',
     short: 'Chimarrão à sombra da árvore que dá nome à cidade.',
-    text: 'Um passeio pela praça, um chimarrão no banco e a árvore sananduva florida: o jeito mais simples (e mais gostoso) de sentir o ritmo da cidade.'
+    text: 'A praça central, com a árvore sananduva que dá nome à cidade. Lugar de passeio, banco à sombra e chimarrão.',
+    instagram: '', telefone: ''
   },
   {
     id: 'artesao', area: 'Cidade', title: 'Casa do Artesão',
     emoji: '🧺', bg: 'linear-gradient(135deg,#f3c98e,#c4823f)',
     img: 'assets/img/casa-artesao.webp', pos: 'center 82%',
     short: 'Artesanato local num chalé de madeira na praça.',
-    text: 'Na praça, um chalé de pinus envernizado reúne o trabalho dos artesãos da região: cestaria, cerâmica, tricô, madeira e lembranças feitas à mão em Sananduva.'
+    text: 'Chalé de madeira na praça que reúne o trabalho dos artesãos da região: cestaria, cerâmica, tricô, madeira e lembranças feitas à mão.',
+    instagram: '', telefone: ''
   },
   {
     id: 'pipinos', area: 'Cidade', title: "Pipino's Lanches",
     emoji: '🍔', bg: 'linear-gradient(135deg,#7fd08f,#2f8f4e)',
     logo: 'assets/img/parceiros/pipinos.webp',
     short: 'O legítimo xis prensado gaúcho.',
-    text: "Pão prensado na chapa, recheio generoso e aquele jeito gaúcho de servir: o Pipino's é endereço certo para provar o xis de Sananduva, entre amigos e boa conversa."
+    text: 'Lancheria no centro da cidade, endereço certo para provar o legítimo xis prensado gaúcho.',
+    instagram: '', telefone: ''
   },
   {
     id: 'majestade', area: 'Cidade', title: 'Majestade',
     emoji: '🍖', icon: 'salame', bg: 'linear-gradient(135deg,#f6d34a,#d9952a)',
     img: 'assets/img/majestade.webp',
     short: 'Salames e embutidos famosos — e a árvore de salame.',
-    text: 'O prédio amarelo da Majestade é um símbolo da indústria local. Daqui saem os salames e embutidos suínos que levam o nome de Sananduva para longe. Não deixe de tirar uma foto com a famosa árvore de salame, marca registrada do lugar.'
+    text: 'Indústria de salames e embutidos suínos, símbolo da produção local. Não deixe de tirar uma foto com a famosa árvore de salame.',
+    instagram: '', telefone: ''
   },
   {
     id: 'vicato', area: 'Cidade', title: 'Vicato',
     emoji: '🌾', bg: 'linear-gradient(135deg,#f1e7c8,#c9b27a)',
     img: 'assets/img/vicato.webp',
     short: 'Farinha de trigo produzida na cidade.',
-    text: 'A Vicato produz farinha de trigo em Sananduva. Do trigo colhido nas lavouras da região ao pão na mesa, ela faz parte da história produtiva do município.'
+    text: 'Moinho que produz farinha de trigo em Sananduva, do trigo das lavouras da região ao pão na mesa.',
+    instagram: '', telefone: ''
   },
   {
     id: 'vivaflor', area: 'Interior', title: 'Vivaflor — Produtos Naturais',
     emoji: '🐝', bg: 'linear-gradient(135deg,#fbe7a1,#e0a92a)',
     logo: 'assets/img/parceiros/vivaflor.png',
     short: 'Mel e produtos naturais, direto da mata florida.',
-    text: 'Em meio a uma mata florida, as abelhas da Vivaflor trabalham sem parar. Daqui saem o mel e os produtos naturais, feitos com o cuidado de quem respeita o tempo da natureza.'
+    text: 'Mel e produtos naturais, feitos em meio a uma mata florida, no tempo da natureza.',
+    instagram: '', telefone: ''
   },
   {
     id: 'elton', area: 'Interior', title: 'Elton',
     emoji: '🍇', bg: 'linear-gradient(135deg,#d9c3e6,#5b2a6e)',
     short: 'Sítio com parreiral e o micro-ônibus do Elton.',
-    text: 'Um sítio com parreiral para colher uva no pé, em família, pertinho do Espaço Ágape. O micro-ônibus do Elton fica estacionado logo à frente.'
+    text: 'Sítio com parreiral para colher uva no pé, em família, pertinho do Espaço Ágape.',
+    instagram: '', telefone: ''
   },
   {
     id: 'kaskata', area: 'Interior', title: 'Camping Kaskata',
     emoji: '⛺', bg: 'linear-gradient(135deg,#9ad7f0,#3a8fb8)',
     logo: 'assets/img/parceiros/camping-kaskata.webp',
     short: 'Quedas d’água, rio e barracas sob as árvores.',
-    text: 'Um rio que desce em quedas d’água entre pedras e mata — e, ao lado, espaço para armar a barraca, acender o fogo de chão e dormir ouvindo a cascata. Instagram: @camping_kaskata.'
+    text: 'Camping à beira de um rio com quedas d’água entre pedras e mata. Barraca, fogo de chão e o som da cascata.',
+    instagram: 'camping_kaskata', telefone: '(54) 99981-8354'
   },
   {
     id: 'agape', area: 'Interior', title: 'Espaço Ágape',
     emoji: '🌄', bg: 'linear-gradient(135deg,#ffd59a,#f08a4b)',
     logo: 'assets/img/parceiros/espaco-agape.png',
     short: 'Terapias, vivências e retiros acima das nuvens.',
-    text: 'No alto do morro, o sol nasce acima de um tapete de nuvens. O Espaço Ágape reúne terapias, vivências, espiritualidade e retiros — um convite para respirar fundo e se reconectar.'
+    text: 'No alto do morro, acima de um tapete de nuvens: terapias, vivências, espiritualidade e retiros.',
+    instagram: '', telefone: ''
   },
   {
     id: 'belusso', area: 'Interior', title: 'Belusso Steak House',
     emoji: '💍', bg: 'linear-gradient(135deg,#f7d9b5,#e89a4c)',
     logo: 'assets/img/parceiros/belusso.png',
-    short: 'Carnes na brasa, pizza, hambúrguer e casamentos entre as árvores.',
-    text: 'Cortes na brasa, um quiosque de pizza no forno a lenha e hambúrgueres, e um espaço bem arborizado, cercado de araucárias, perfeito para casamentos e celebrações ao ar livre.'
+    short: 'Carnes na brasa, pizza, bocha e casamentos entre as árvores.',
+    text: 'Carnes na brasa, pizza no forno a lenha e hambúrguer, num espaço arborizado com lago, cancha de bocha e área para casamentos ao ar livre.',
+    instagram: '', telefone: ''
   },
   {
     id: 'angico', area: 'Interior', title: 'Pousada Angico',
     emoji: '🏡', bg: 'linear-gradient(135deg,#f1c98e,#c98a3f)',
     logo: 'assets/img/parceiros/pousada-angico.webp',
     short: 'Chalé de madeira suspenso, com fogueira à beira do riacho.',
-    text: 'Um chalé único de madeira, com frontão de vidro suspenso sobre o barranco, à beira da estrada do interior e ao lado de um grande angico. Nos fundos, roda de fogo no firepit com o som do riacho. Silêncio, céu estrelado e o cheiro do mato ao amanhecer.'
+    text: 'Chalé de madeira suspenso, à beira da estrada do interior e ao lado de um grande angico. Fogueira no firepit com o som do riacho.',
+    instagram: '', telefone: ''
   },
   {
     id: 'dallas', area: 'Interior', title: 'Dallas Animal',
     emoji: '🦆', bg: 'linear-gradient(135deg,#e9e9e9,#9a9a9a)',
     logo: 'assets/img/parceiros/dallas-animal.png',
     short: 'Lago com patinhos, carpas, coelhos e passarinhos.',
-    text: 'Um lago tranquilo onde os patinhos passeiam em fila e as carpas saltam na água. Na grama, coelhos pulando; no céu, passarinhos voando em volta. Ótimo para levar as crianças e aproveitar a tarde.'
+    text: 'Lago com patinhos e carpas, coelhos na grama e passarinhos em volta. Ótimo para levar as crianças.',
+    instagram: '', telefone: ''
   },
   {
     id: 'moterle', area: 'Interior', title: 'Sítio Moterle JM',
     emoji: '🌲', bg: 'linear-gradient(135deg,#cfe6c0,#4f8a35)',
     logo: 'assets/img/parceiros/sitio-moterle.png',
     short: 'Natureza, lazer, família e bem-estar.',
-    text: 'Um lago cercado de árvores para pescar com calma, pomar com frutas para colher no pé, sombra fresca e espaço para a família aproveitar o dia. O Sítio Moterle une natureza, lazer, família e bem-estar.'
+    text: 'Lago para pescar, pomar para colher frutas no pé e sombra para a família. Natureza, lazer e bem-estar.',
+    instagram: '', telefone: ''
   },
   {
     id: 'fracasso', area: 'Interior', title: 'Fazenda Fracasso',
     emoji: '🍓', bg: 'linear-gradient(135deg,#f6c6c0,#8b3a2a)',
     logo: 'assets/img/parceiros/fazenda-fracasso.webp',
-    short: 'Café colonial e morangos colhidos nas estufas.',
-    text: 'Café passado na hora, mesa farta e estufas de morangos em bancadas suspensas, para colher sem se abaixar. Ao lado, o trator com a charrete. A Fazenda Fracasso recebe com a hospitalidade do interior.'
+    short: 'Café colonial, morangos das estufas e lago com quiosque.',
+    text: 'Café colonial e estufas de morango em bancadas suspensas, para colher sem se abaixar. Ao pé do morro, um lago com quiosque.',
+    instagram: '', telefone: ''
   },
   {
     id: 'flora', area: 'Interior', title: 'Flora',
     emoji: '🕯️', bg: 'linear-gradient(135deg,#f7dbe4,#b9879a)',
     logo: 'assets/img/parceiros/flora.webp', logoBg: '#eee0c6',
     short: 'Yoga numa clareira cercada de árvores e produtos artesanais.',
-    text: 'No interior, a sudoeste da cidade, uma estrada de chão que sai da Vicato leva até a Flora. Ali, as práticas de yoga acontecem num deck numa clareira cercada de árvores, com o aroma das velas perfumadas e dos produtos artesanais da casa.'
+    text: 'Yoga num deck em uma clareira cercada de árvores, velas perfumadas e produtos artesanais. Acesso por estrada de chão a partir da Vicato.',
+    instagram: '', telefone: ''
   }
 ];

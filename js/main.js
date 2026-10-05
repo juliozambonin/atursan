@@ -60,6 +60,25 @@
       </div>
     </button>`).join('');
 
+  // contato do local: Instagram e telefone (vazios aparecem como "a preencher")
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const IC_IG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/></svg>';
+  const IC_TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z" fill="currentColor"/></svg>';
+  function contact(d) {
+    const ig = (d.instagram || '').trim().replace(/^@/, '');
+    const tel = (d.telefone || '').trim(), num = tel.replace(/\D/g, '');
+    const empty = '<span class="contact-empty">a preencher</span>';
+    const igVal = ig ? `<a href="https://instagram.com/${encodeURIComponent(ig)}" target="_blank" rel="noopener">@${esc(ig)}</a>` : empty;
+    let telVal = empty;
+    if (tel) {
+      telVal = `<a href="tel:+55${num}">${esc(tel)}</a>`;
+      if (num.length === 11) telVal += ` <a class="contact-wa" href="https://wa.me/55${num}" target="_blank" rel="noopener">WhatsApp</a>`;
+    }
+    return `<p class="contact-title">Contato</p>
+      <div class="contact-row"><span class="contact-icon">${IC_IG}</span><span class="contact-label">Instagram</span><span class="contact-val">${igVal}</span></div>
+      <div class="contact-row"><span class="contact-icon">${IC_TEL}</span><span class="contact-label">Telefone</span><span class="contact-val">${telVal}</span></div>`;
+  }
+
   const modal = document.getElementById('modal');
   const mMedia = document.getElementById('modalMedia');
   let lastFocus = null, currentId = null;
@@ -80,6 +99,7 @@
     document.getElementById('modalTag').textContent = d.area;
     document.getElementById('modalTitle').textContent = d.title;
     document.getElementById('modalText').textContent = d.text;
+    document.getElementById('modalContact').innerHTML = contact(d);
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
     modal.querySelector('.modal-close').focus();

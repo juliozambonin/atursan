@@ -1015,6 +1015,28 @@
     for (const [x, y] of [[1118, 400], [1122, 520], [1355, 520]]) sprite(x, y, treeS(rr(.75, .9), '#4f8a35'), 8);
     pin('fracasso', 1205, 407, 80);
     origin();
+    // ao pé do morro, a leste: lago com quiosque na beira e a trilha que desce da fazenda
+    {
+      const lx = 1432, ly = 522;
+      reserve(lx - 66, ly - 56, lx + 60, ly + 84);
+      G += `<path d="${strip([[1318, 548], [1346, 562], [1372, 576]], 8)}" fill="#d9c49a"/>`;
+      G += `<path d="${blob(lx, ly, 56, 46, 18, .06)}" fill="#6f9e45"/><path d="${blob(lx, ly, 48, 39, 18, .05)}" fill="url(#lakeG)"/>`;
+      for (let i = 0; i < 4; i++) { const p = P(lx + rr(-26, 26), ly + rr(-20, 20)); G += `<g transform="translate(${f(p[0])},${f(p[1])})"><ellipse class="ripple" rx="12" ry="4.5" fill="none" stroke="#e6f7ff" stroke-width="1.3" style="${neg(3)}"/></g>`; }
+      lakes.push({ cx: lx, cy: ly, rx: 32, ry: 26 });
+      for (const a of [200, 250, 300, 340]) sprite(lx + Math.cos(rad(a)) * 52, ly + Math.sin(rad(a)) * 43, cattail(), 4, 'fracasso');
+      // quiosque: deck quadrado, quatro esteios, telhado de quatro águas e uma mesa com gente
+      const qx = 1388, qy = 580, q = 15, zt = 27;
+      let k = box(qx - q, qy - q, 2 * q, 2 * q, 3, '#c9955a');
+      const post = (x, y) => line(P(x, y, 3), P(x, y, zt), '#7a5232', 2.2);
+      k += post(qx - q + 2, qy - q + 2) + post(qx + q - 2, qy - q + 2) + post(qx - q + 2, qy + q - 2);
+      k += at(qx, qy, 3, `${shadowE(10, 3)}<ellipse cx="0" cy="-8" rx="8" ry="3.2" fill="#fff"/><path d="M0,-8 V0" stroke="#888" stroke-width="1.3"/>
+        <rect x="-4" y="-12" width="2.6" height="3" fill="#fff"/><rect x="1.5" y="-12" width="2.6" height="3" fill="#fff"/>
+        <g transform="translate(-10,2) scale(.5)">${seated({ shirt: '#e67e22' })}</g><g transform="translate(10,2) scale(-.5,.5)">${seated({ long: true, shirt: '#3d7dd9' })}</g>`);
+      k += post(qx + q - 2, qy + q - 2);
+      k += pyramid(qx - q - 3, qy - q - 3, 2 * q + 6, 2 * q + 6, zt, 15, '#8b3a2a');
+      add(qx - q, qy - q, qx + q, qy + q, k, 'fracasso');
+      mover({ kind: 'sprite', path: [[1322, 550], [1366, 572]], mode: 'ping', speed: 4, s: PS, inner: person({ long: true, dress: true, shirt: '#f4a6c6' }), spot: 'fracasso' });
+    }
   }
 
   // --- Belusso Steak House (a leste, mais ao norte; o rio passa perto) ---
@@ -1022,18 +1044,57 @@
     reserve(825, 40, 1022, 270);
     G += quad(828, 44, 1018, 266, '#a8d47c');
     G += quad(890, 186, 985, 194, '#f6dbe4');
-    let s = box(850, 70, 90, 54, 34, '#efe7d8');
-    s += `<g transform="${fl(850, 124, 34)}"><rect x="18" y="3" width="54" height="15" rx="2" fill="#2f4a2a"/>
-      <text x="45" y="11" text-anchor="middle" font-family="Montserrat,sans-serif" font-weight="800" font-size="7" fill="#fff" letter-spacing=".5">BELUSSO</text>
-      <text x="45" y="16.4" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="4.6" fill="#f0a35a">Steak House</text>
-      <rect x="6" y="21" width="11" height="10" fill="#ffd98a"/><rect x="73" y="21" width="11" height="10" fill="#ffd98a"/><rect x="40" y="21" width="11" height="13" fill="#5a3a22"/></g>`;
-    s += `<g transform="${fr(940, 124, 34)}">${wins(54, 12, 3, 1, 10, 9, '#ffd98a', 'transform="translate(0,18)"')}</g>`;
-    s += gable(850, 70, 90, 54, 34, 22, '#3f6b35', 'x', '#efe7d8');
-    add(850, 70, 940, 124, s, 'belusso');
-    let gr = box(926, 58, 10, 10, 62, '#9a948a');
-    const gt = P(931, 63, 62);
+    // lago atrás da cancha, com patos
+    {
+      const lx = 945, ly = -8;
+      reserve(lx - 66, ly - 50, lx + 66, ly + 48);
+      G += `<path d="${blob(lx, ly, 62, 44, 18, .06)}" fill="#6f9e45"/><path d="${blob(lx, ly, 54, 37, 18, .05)}" fill="url(#lakeG)"/>`;
+      for (let i = 0; i < 4; i++) { const p = P(lx + rr(-30, 30), ly + rr(-18, 18)); G += `<g transform="translate(${f(p[0])},${f(p[1])})"><ellipse class="ripple" rx="12" ry="4.5" fill="none" stroke="#e6f7ff" stroke-width="1.3" style="${neg(3)}"/></g>`; }
+      lakes.push({ cx: lx, cy: ly, rx: 36, ry: 24 });
+      for (const a of [150, 200, 250, 20]) sprite(lx + Math.cos(rad(a)) * 58, ly + Math.sin(rad(a)) * 41, cattail(), 4, 'belusso');
+      const pond = ellipsePath(lx, ly, 32, 20, 24);
+      mover({ kind: 'sprite', path: pond, speed: 6, s: .7, inner: duck(true), phase: .2, spot: 'belusso', r: 3 });
+      mover({ kind: 'sprite', path: pond, speed: 6, s: .7, inner: duck(false), phase: .13, spot: 'belusso', r: 3 });
+    }
+    // cancha de bocha: comprida e estreita, piso de saibro cercado de tábuas; um jogador arremessa,
+    // as bochas param perto do bolim e a turma acompanha do banco, de chimarrão na mão
+    {
+      const x0 = 846, x1 = 946, y0 = 84, y1 = 108, ym = (y0 + y1) / 2, T = 3, BH = 4;
+      const WOOD = '#9a6a3c';
+      let cb = quad(x0 - T, y0 - T, x1 + T, y1 + T, '#b98a55');
+      cb += quad(x0, y0, x1, y1, '#dcc48e');
+      for (let x = x0 + 8; x < x1; x += 9) cb += line(P(x, y0 + 2), P(x + 4, y1 - 2), '#cfb47c', 1, 'opacity=".6"');
+      cb += line(P(x0 + 18, y0), P(x0 + 18, y1), '#f6efe1', 1.2) + line(P(x1 - 18, y0), P(x1 - 18, y1), '#f6efe1', 1.2);
+      cb += box(x0 - T, y0 - T, x1 - x0 + 2 * T, T, BH, WOOD) + box(x0 - T, y0, T, y1 - y0, BH, WOOD);
+      // bochas (vermelhas e verdes) em volta do bolim, no fundo da cancha
+      const ball = (x, y, c, r = 2.1) => { const q = P(x, y, 0); return `<circle cx="${f(q[0])}" cy="${f(q[1] - r)}" r="${r}" fill="${c}"/><circle cx="${f(q[0] - r * .35)}" cy="${f(q[1] - r * 1.35)}" r="${f(r * .35)}" fill="#fff" opacity=".55"/>`; };
+      const bx = x1 - 24;
+      cb += ball(bx, ym, '#f4f1e4', 1.2);
+      for (const [dx, dy, c] of [[-7, -4, '#c0392b'], [5, 5, '#2f8f4e'], [-3, 7, '#c0392b'], [9, -6, '#2f8f4e']]) cb += ball(bx + dx, ym + dy, c);
+      // jogador arremessando (braço em pêndulo) e a bocha rolando até o bolim
+      const a0 = P(x0 + 16, ym, 0), a1 = P(bx - 10, ym, 0);
+      cb += at(x0 + 10, ym, 0, `<g transform="scale(${PS})">${person({ walk: false, shirt: '#c0392b', pants: '#2c3e50' })}
+        <g class="bocha-arm" style="transform-origin:0px -22px"><path d="M0,-22 L2,-11" stroke="#e0a97e" stroke-width="2.6" stroke-linecap="round"/><circle class="bocha-hand" cx="2.4" cy="-9.6" r="3.4" fill="#c0392b"/></g></g>`);
+      cb += `<g transform="translate(${f(a0[0])},${f(a0[1] - 2.1)})"><circle class="bocha-roll" r="2.1" fill="#c0392b" style="--fx:${f(a1[0] - a0[0])}px;--fy:${f(a1[1] - a0[1])}px"/></g>`;
+      cb += at(x1 - 8, ym + 6, 0, `<g transform="scale(-${PS},${PS})">${person({ walk: false, shirt: '#2f8f4e' })}</g>`);
+      cb += at(x1 - 6, ym - 6, 0, `<g transform="scale(-${PS},${PS})">${person({ walk: false, shirt: '#f4f1ea', hair: '#d9d0c0' })}</g>`);
+      cb += box(x0 - T, y1, x1 - x0 + 2 * T, T, BH, shade(WOOD, 1.08)) + box(x1, y0, T, y1 - y0, BH, shade(WOOD, .85));
+      add(x0 - T, y0 - T, x1 + T, y1 + T, cb, 'belusso');
+      // banco da torcida atrás da cancha e o placar no fundo
+      for (const [x, who] of [[868, [{ cuia: true, hair: '#d9d0c0', shirt: '#34495e' }, { shirt: '#e67e22' }]], [900, [{ shirt: '#9b59b6', long: true }, { cuia: true, shirt: '#f4f1ea', hair: '#d9d0c0' }]]]) {
+        sprite(x, 72, benchS(`<g transform="translate(-5,-3) scale(.5)">${seated(who[0])}</g><g transform="translate(6,-3) scale(.5)">${seated(who[1])}</g>`), 8, 'belusso');
+      }
+      sprite(934, 74, `${shadowE(9, 3)}<path d="M-7,0 V-14 M7,0 V-14" stroke="#5a3d26" stroke-width="1.8"/><rect x="-11" y="-26" width="22" height="13" rx="1.5" fill="#2f4a2a" stroke="#5a3d26" stroke-width="1.2"/>
+        <text x="0" y="-17" text-anchor="middle" font-family="Montserrat,sans-serif" font-weight="800" font-size="6.5" fill="#fff">7 × 5</text>`, 6, 'belusso');
+    }
+    // churrasqueira de tijolo com chaminé (as carnes na brasa)
+    let gr = box(962, 58, 26, 16, 14, '#a5472e');
+    gr += `<g transform="${fl(962, 74, 14)}"><rect x="4" y="3" width="18" height="7" fill="#2b1a12"/><path d="M6,8 q3,-3 6,0 q3,-3 6,0" stroke="#ff8a1e" stroke-width="1.4" fill="none" class="twinkle"/></g>`;
+    gr += box(970, 62, 9, 8, 26, '#8e3b2a', 14);
+    const gt = P(974, 66, 40);
     for (let i = 0; i < 4; i++) gr += `<g transform="translate(${f(gt[0])},${f(gt[1])})"><circle class="smoke" r="${f(rr(5, 8))}" fill="#e6e6e6" style="animation-delay:${(i * 1.2).toFixed(1)}s;--sx:${f(rr(25, 50))}px;--sy:-80px;--ss:2"/></g>`;
-    add(926, 58, 936, 68, gr, 'belusso');
+    add(962, 58, 988, 74, gr, 'belusso');
+    sprite(1002, 136, signS([['BELUSSO', 9, 'Montserrat,sans-serif', 800, '#fff'], ['Steak House', 6, 'Georgia,serif', 700, '#f0a35a']], { w: 58, h: 26, bg: '#2f4a2a', post: '#5a3d26' }), 8, 'belusso');
     let arc = `<path d="M-12,0 L-12,-22 Q0,-38 12,-22 L12,0" stroke="#fff" stroke-width="2.6" fill="none"/>`;
     for (let i = 0; i <= 10; i++) { const a = Math.PI * (1 - i / 10); arc += `<circle cx="${f(Math.cos(a) * 12)}" cy="${f(-22 - Math.sin(a) * 12)}" r="2.6" fill="${i % 2 ? '#f8a5c2' : '#fff'}"/>`; }
     arc += `<g transform="translate(-4,0) scale(${PS})">${person({ walk: false, dress: true, shirt: '#fff', pants: '#fff', long: true, veil: true })}</g>`;
@@ -1066,10 +1127,10 @@
     for (const [x, y, c] of [[862, 255, '#d7261e'], [908, 256, '#2f8f4e']]) sprite(x, y, tableS(c, true, true, 'pizza'), 9, 'belusso');
     mover({ kind: 'sprite', path: [[884, 244], [872, 248]], mode: 'ping', speed: 4, s: PS, inner: person({ carry: 'pizza', apron: true, shirt: '#2f4a2a' }), spot: 'belusso' });
     mover({ kind: 'sprite', path: [[888, 246], [900, 249]], mode: 'ping', speed: 3.5, s: PS, inner: person({ carry: 'burger', apron: true, long: true, shirt: '#d7261e' }), spot: 'belusso', phase: .5 });
-    for (const [x, y, t] of [[836, 54, 'a'], [1006, 56, 't'], [836, 150, 't'], [1010, 238, 'a'], [1008, 112, 'a'], [962, 250, 't']]) {
+    for (const [x, y, t] of [[836, 54, 'a'], [1014, 84, 't'], [836, 150, 't'], [1010, 238, 'a'], [962, 250, 't']]) {
       sprite(x, y, t === 'a' ? araucariaS(rr(.6, .72)) : treeS(rr(.85, 1), pick(['#4f8a35', '#5e9a3c', '#6aa846'])), 9, 'belusso');
     }
-    pin('belusso', 895, 97, 88);
+    pin('belusso', 896, 96, 46);
   }
 
   // ==================================================================
@@ -1078,6 +1139,8 @@
   {
     const rio = [[1800, 945], [1700, 780], [1615, 655], [1515, 465], [1380, 280], [1215, 125], [1085, -25], [980, -200], [900, -330], [780, -520], [690, -650]];
     const larg = [56, 62, 58, 44, 40, 36, 34, 32, 30, 28, 28];
+    // o rio entra pela borda de baixo do mapa (trecho só desenhado; cachoeiras e margens usam rio/larg)
+    const rioV = [[1990, 1265], [1890, 1100], ...rio], largV = [56, 56, ...larg];
     reserve(1462, 660, 1600, 900);
     G += quad(1462, 660, 1600, 900, '#a3d175');
     function taper(pts, ws, k = 1) {
@@ -1091,12 +1154,12 @@
       const smooth = arr => arr.slice(1).reduce((d, p, i) => d + ` Q${pt(arr[i])} ${pt(mid(arr[i], p))}`, `L${pt(arr[0])}`) + ` L${pt(arr[arr.length - 1])}`;
       return `M${pt(L[0])} ${smooth(L)} ${smooth(R.reverse())}Z`;
     }
-    G += `<path d="${taper(rio, larg, 1.3)}" fill="#8f8a5c"/><path d="${taper(rio, larg)}" fill="#6fa6bd"/><path d="${taper(rio, larg, .55)}" fill="#7fb6cb" opacity=".7"/>`;
-    ROADS.push([rio, 40]);
+    G += `<path d="${taper(rioV, largV, 1.3)}" fill="#8f8a5c"/><path d="${taper(rioV, largV)}" fill="#6fa6bd"/><path d="${taper(rioV, largV, .55)}" fill="#7fb6cb" opacity=".7"/>`;
+    ROADS.push([rioV, 40]);
     for (const off of [-.3, 0, .3]) {
-      const lane = rio.map((p, i) => {
-        const a = rio[Math.max(0, i - 1)], b = rio[Math.min(rio.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy);
-        return P(p[0] - dy / n * larg[i] * off, p[1] + dx / n * larg[i] * off);
+      const lane = rioV.map((p, i) => {
+        const a = rioV[Math.max(0, i - 1)], b = rioV[Math.min(rioV.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy);
+        return P(p[0] - dy / n * largV[i] * off, p[1] + dx / n * largV[i] * off);
       });
       G += `<path class="river" d="M${lane.map(pt).join(' L')}" stroke="#e4f4fa" stroke-width="1.8" fill="none" stroke-dasharray="5 22" style="${neg(1.6)}"/>`;
     }
@@ -1135,13 +1198,14 @@
     const tendas = [[1498, 690, '#e67e22'], [1536, 748, '#3d7dd9'], [1500, 790, '#2ecc71'], [1552, 830, '#e74c3c'], [1468, 846, '#f1c40f']];
     for (const [x, y, c] of tendas) add(x, y, x + 32, y + 24, tent(x, y, 32, 24, 20, c), 'kaskata');
     // mata ciliar nas duas margens
-    for (let i = 0; i < 5; i++) {
-      const a = rio[i], b = rio[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy);
+    for (let i = 0; i < 7; i++) {
+      const a = rioV[i], b = rioV[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy);
       for (let t = 0; t < 1; t += .3) for (const side of [-1, 1]) {
-        const hw = larg[i] / 2 + rr(14, 32);
+        const hw = largV[i] / 2 + rr(14, 32);
         const x = a[0] + dx * t - dy / n * hw * side, y = a[1] + dy * t + dx / n * hw * side;
         if (!visible(x, y, 30) || tendas.some(([tx, ty]) => x > tx - 14 && x < tx + 46 && y > ty - 14 && y < ty + 38)) continue;
         if (x > 1460 && x < 1602 && y > 658 && y < 902 && side < 0) continue;
+        if (lakes.some(l => Math.hypot((x - l.cx) / (l.rx + 40), (y - l.cy) / (l.ry + 36)) < 1)) continue; // não invade lagos
         sprite(x, y, rnd() < .25 ? araucariaS(rr(.5, .65)) : treeS(rr(.85, 1.1), pick(['#2f6b2a', '#3f7a2c', '#4f8a35', '#356f30'])), 9, 'kaskata');
       }
     }
@@ -1188,7 +1252,7 @@
   reserve(515, 1510, 665, 1615);
   for (const [x, y, s, flip, moo] of [[560, 1560, .45, true, false], [625, 1585, .48, false, true]]) sprite(x, y, `<g transform="scale(${flip ? -s : s},${s})">${cow({ moo: moo && !flip })}</g>`, 10);
   // vacas perto do morro da fazenda
-  for (const [x, y, s, flip] of [[1385, 660, .45, false], [1420, 600, .42, true]]) { sprite(x, y, `<g transform="scale(${flip ? -s : s},${s})">${cow()}</g>`, 10); reserve(x - 12, y - 12, x + 12, y + 12); }
+  for (const [x, y, s, flip] of [[1352, 690, .45, false], [1418, 660, .42, true]]) { sprite(x, y, `<g transform="scale(${flip ? -s : s},${s})">${cow()}</g>`, 10); reserve(x - 12, y - 12, x + 12, y + 12); }
 
   // ==================================================================
   // PÓRTICO DE SANANDUVA — na rodovia sul, logo depois da entrada da Kaskata

@@ -212,6 +212,17 @@ section { position: relative; }
 .modal-tag { margin: 0; font-size: .75rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--red); }
 .modal-body h3 { font-size: 1.6rem; margin: 6px 0 10px; }
 .modal-body #modalText { margin: 0; color: var(--muted); }
+.modal-contact { margin-top: 16px; padding: 12px 16px; border-radius: 14px; background: var(--cream); display: grid; gap: 6px; }
+.contact-title { margin: 0 0 2px; font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--olive); }
+.contact-row { display: grid; grid-template-columns: 20px 82px 1fr; align-items: center; gap: 8px; font-size: .93rem; }
+.contact-icon { display: grid; color: var(--green-700); }
+.contact-icon svg { width: 18px; height: 18px; }
+.contact-label { color: var(--muted); }
+.contact-val { min-width: 0; overflow-wrap: anywhere; }
+.contact-val a { color: var(--green-800); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--olive-soft); }
+.contact-val a:hover { color: var(--red); border-color: currentColor; }
+.contact-val .contact-wa { margin-left: 6px; font-size: .8rem; color: #1f8a4c; border-color: #9fd6b4; }
+.contact-empty { color: var(--muted); font-style: italic; opacity: .75; }
 .modal-map { margin-top: 18px; border: 0; cursor: pointer; font: inherit; font-weight: 700; }
 .card-media img.logo-img, .modal-media img.logo-img { object-fit: contain; padding: 14px; background: #fff; }
 .modal-media { position: relative; }
@@ -343,6 +354,18 @@ section { position: relative; }
   8% { opacity: 1; }
   85% { transform: translate(calc(var(--fx) * .92), calc(var(--fy) * .92)); opacity: 1; }
   100% { transform: translate(var(--fx), calc(var(--fy) + 10px)); opacity: 0; }
+}
+/* bocha: o braço vai atrás e solta a bocha, que rola até perto do bolim (vetor vem do JS) */
+.scene .bocha-arm { animation: bochaArm 3.2s ease-in-out infinite; }
+@keyframes bochaArm { 0%, 10% { transform: rotate(0deg); } 25% { transform: rotate(55deg); } 34% { transform: rotate(-70deg); } 45%, 100% { transform: rotate(-20deg); } }
+.scene .bocha-hand { animation: bochaHand 3.2s step-end infinite; }
+@keyframes bochaHand { 0% { opacity: 1; } 34% { opacity: 0; } 96% { opacity: 1; } }
+.scene .bocha-roll { animation: bochaRoll 3.2s infinite; opacity: 0; }
+@keyframes bochaRoll {
+  0%, 33% { transform: translate(0,0); opacity: 0; animation-timing-function: cubic-bezier(.2,.6,.4,1); }
+  34% { transform: translate(0,0); opacity: 1; animation-timing-function: cubic-bezier(.2,.6,.4,1); }
+  80% { transform: translate(var(--fx), var(--fy)); opacity: 1; }
+  92%, 100% { transform: translate(var(--fx), var(--fy)); opacity: 0; }
 }
 /* velas e fogueira */
 .scene .flame { animation: flame .35s ease-in-out infinite alternate; }
