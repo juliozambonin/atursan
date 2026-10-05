@@ -565,8 +565,8 @@
     let ca = box(x, y, w, d, h, WOOD, 0, { right: '#c4823f' });
     ca += `<g transform="${fl(x, y + d, h)}">${planks(w, h)}
       <rect x="14" y="6" width="10" height="14" fill="#8a5326" stroke="#6b3d18" stroke-width=".7"/><rect x="15.5" y="7.5" width="7" height="5" fill="#ffe9b0" opacity=".85"/>
-      ${[3, 28].map(u => `<rect x="${u}" y="6" width="7" height="6.5" fill="#cfe6f3" stroke="#fff" stroke-width="1.1"/><rect x="${u - .5}" y="12.5" width="8" height="2" fill="#8a5326"/><circle cx="${u + 1.5}" cy="12.3" r="1.1" fill="#e74c3c"/><circle cx="${u + 5}" cy="12" r="1.1" fill="#f1c40f"/>`).join('')}</g>`;
-    ca += `<g transform="${fr(x + w, y + d, h)}">${planks(d, h)}<rect x="10" y="6" width="10" height="7" fill="#bcd6e4" stroke="#fff" stroke-width="1.1"/></g>`;
+      ${[3, 28].map(u => `<rect x="${u - 1.9}" y="5.6" width="1.7" height="7.3" fill="#b8322a"/><rect x="${u + 7.2}" y="5.6" width="1.7" height="7.3" fill="#b8322a"/><rect x="${u}" y="6" width="7" height="6.5" fill="#cfe6f3" stroke="#c0392b" stroke-width="1.1"/><path d="M${u + 3.5},6 V12.5 M${u},9.25 H${u + 7}" stroke="#c0392b" stroke-width=".55"/><rect x="${u - .5}" y="12.5" width="8" height="2" fill="#8a5326"/><circle cx="${u + 1.5}" cy="12.3" r="1.1" fill="#e74c3c"/><circle cx="${u + 5}" cy="12" r="1.1" fill="#f1c40f"/>`).join('')}</g>`;
+    ca += `<g transform="${fr(x + w, y + d, h)}">${planks(d, h)}<rect x="8.1" y="5.6" width="1.7" height="7.8" fill="#9e2a23"/><rect x="20.2" y="5.6" width="1.7" height="7.8" fill="#9e2a23"/><rect x="10" y="6" width="10" height="7" fill="#bcd6e4" stroke="#c0392b" stroke-width="1.1"/><path d="M15,6 V13 M10,9.5 H20" stroke="#c0392b" stroke-width=".55"/></g>`;
     let tri = '';
     for (let k = 1.7; k < rh - 2; k += 3.4) { const hw = (w / 2) * (1 - k / rh); tri += `<path d="M${f(w / 2 - hw)},${f(-k)} H${f(w / 2 + hw)}" stroke="${SEAM}" stroke-width=".6"/>`; }
     ca += gable(x, y, w, d, h, rh, '#5b3a29', 'y', WOOD, 4);

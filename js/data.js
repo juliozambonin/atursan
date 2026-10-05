@@ -1,5 +1,5 @@
 // Atrativos de Sananduva — textos para a ATURSAN revisar e completar.
-// img: foto (preenche o card) · logo: logotipo (exibido inteiro, sobre fundo claro)
+// img: foto (preenche o card; pos: enquadramento, ex. 'center 80%') · logo: logotipo (exibido inteiro, sobre fundo claro)
 // Sem img/logo, o card usa o emoji sobre o gradiente.
 window.ATRATIVOS = [
   {
@@ -19,13 +19,14 @@ window.ATRATIVOS = [
   {
     id: 'artesao', area: 'Cidade', title: 'Casa do Artesão',
     emoji: '🧺', bg: 'linear-gradient(135deg,#f3c98e,#c4823f)',
+    img: 'assets/img/casa-artesao.webp', pos: 'center 82%',
     short: 'Artesanato local num chalé de madeira na praça.',
     text: 'Na praça, um chalé de pinus envernizado reúne o trabalho dos artesãos da região: cestaria, cerâmica, tricô, madeira e lembranças feitas à mão em Sananduva.'
   },
   {
     id: 'pipinos', area: 'Cidade', title: "Pipino's Lanches",
     emoji: '🍔', bg: 'linear-gradient(135deg,#7fd08f,#2f8f4e)',
-    logo: 'assets/img/parceiros/pipinos.png',
+    logo: 'assets/img/parceiros/pipinos.webp',
     short: 'O legítimo xis prensado gaúcho.',
     text: "Pão prensado na chapa, recheio generoso e aquele jeito gaúcho de servir: o Pipino's é endereço certo para provar o xis de Sananduva, entre amigos e boa conversa."
   },
@@ -59,7 +60,7 @@ window.ATRATIVOS = [
   {
     id: 'kaskata', area: 'Interior', title: 'Camping Kaskata',
     emoji: '⛺', bg: 'linear-gradient(135deg,#9ad7f0,#3a8fb8)',
-    logo: 'assets/img/parceiros/camping-kaskata.png',
+    logo: 'assets/img/parceiros/camping-kaskata.webp',
     short: 'Quedas d’água, rio e barracas sob as árvores.',
     text: 'Um rio que desce em quedas d’água entre pedras e mata — e, ao lado, espaço para armar a barraca, acender o fogo de chão e dormir ouvindo a cascata. Instagram: @camping_kaskata.'
   },
@@ -80,7 +81,7 @@ window.ATRATIVOS = [
   {
     id: 'angico', area: 'Interior', title: 'Pousada Angico',
     emoji: '🏡', bg: 'linear-gradient(135deg,#f1c98e,#c98a3f)',
-    img: 'assets/img/parceiros/pousada-angico.png',
+    logo: 'assets/img/parceiros/pousada-angico.webp',
     short: 'Chalé de madeira suspenso, com fogueira à beira do riacho.',
     text: 'Um chalé único de madeira, com frontão de vidro suspenso sobre o barranco, à beira da estrada do interior e ao lado de um grande angico. Nos fundos, roda de fogo no firepit com o som do riacho. Silêncio, céu estrelado e o cheiro do mato ao amanhecer.'
   },

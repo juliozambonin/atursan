@@ -44,7 +44,7 @@
   const cards = document.getElementById('cards');
 
   function media(d) {
-    if (d.img) return `<img src="${d.img}" alt="${d.title}" loading="lazy">`;
+    if (d.img) return `<img src="${d.img}" alt="${d.title}" loading="lazy"${d.pos ? ` style="object-position:${d.pos}"` : ''}>`;
     if (d.logo) return `<img class="logo-img" src="${d.logo}" alt="Logo ${d.title}" loading="lazy">`;
     return `<span class="card-emoji" aria-hidden="true">${d.emoji}</span>`;
   }
