@@ -61,9 +61,9 @@ window.ATRATIVOS = [
     instagram: '', telefone: ''
   },
   {
-    id: 'elton', area: 'Interior', title: 'Elton',
+    id: 'elton', area: 'Interior', title: 'Sítio Vicenci',
     emoji: '🍇', bg: 'linear-gradient(135deg,#d9c3e6,#5b2a6e)',
-    short: 'Sítio com parreiral e o micro-ônibus do Elton.',
+    short: 'Sítio com parreiral e micro-ônibus para os visitantes.',
     text: 'Sítio com parreiral para colher uva no pé, em família, pertinho do Espaço Ágape.',
     instagram: '', telefone: ''
   },

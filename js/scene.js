@@ -182,13 +182,23 @@
   // ==================================================================
   const shadowE = (rx, ry = rx * .42) => `<ellipse rx="${rx}" ry="${f(ry)}" fill="#1d2b12" opacity=".16"/>`;
 
-  const SPRING = ['#f4a6c6', '#ffffff', '#f7d64a', '#e84393', '#fbc7d4', '#f39c12'];
+  const SPRING = ['#ff4f9a', '#ffffff', '#ffd23f', '#e84393', '#ff8ad8', '#ff9f1a', '#b86bf0'];
+  // ipês e cerejeiras: na primavera parte das árvores fica com a copa toda colorida
+  const IPE = ['#f7c531', '#f27fb0', '#a95cc4', '#fbe6f0', '#ff9fc6'];
+  // flor vista de cima: pétalas numa cor e miolo contrastante
+  const bloom = (x, y, r, c) => `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="${c}"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(r * .4)}" fill="${c === '#ffd23f' || c === '#f7c531' ? '#e0701a' : '#ffe14d'}"/>`;
+  // n flores espalhadas na copa (um disco em volta do centro da copa)
+  const crownBlooms = (n, r0, r1, col) => Array.from({ length: n }, () => { const a = rr(0, 6.283), d = Math.sqrt(rnd()) * 17; return bloom(Math.cos(a) * d, -33 + Math.sin(a) * d * .95, rr(r0, r1), col()); }).join('');
   function treeS(s = 1, c = '#5e9a3c', o = {}) {
     c = leaf(c);
-    const dk = shade(c, .78), lt = shade(c, 1.15);
     let blossom = o.blossom ? Array.from({ length: 14 }, () => `<circle cx="${f(rr(-15, 15))}" cy="${f(rr(-48, -20))}" r="${f(rr(1.2, 2.4))}" fill="${o.blossom}"/>`).join('') : '';
-    // primavera: toda árvore florida (sorteio à parte, para não mudar o mapa)
-    if (PRIMAVERA && !o.blossom) blossom = alt(() => { const fc = pick(SPRING); return Array.from({ length: 16 }, () => `<circle cx="${f(rr(-16, 16))}" cy="${f(rr(-50, -19))}" r="${f(rr(1.3, 2.5))}" fill="${fc}"/>`).join(''); });
+    // primavera: toda árvore florida, bem carregada; parte delas vira ipê (sorteio à parte, para não mudar o mapa)
+    if (PRIMAVERA && !o.blossom) blossom = alt(() => {
+      if (o.ipe || rnd() < .38) { c = pick(IPE); const k = c; return crownBlooms(24, 1.6, 2.8, () => pick([shade(k, 1.3), shade(k, .8), '#ffffff'])); }
+      const fc = pick(SPRING);
+      return crownBlooms(26, 2, 3.2, () => (rnd() < .8 ? fc : '#ffffff'));
+    });
+    const dk = shade(c, .78), lt = shade(c, 1.15);
     const st = neg(4); // sempre sorteia, para manter o mesmo mapa
     return `<g transform="scale(${s})">${shadowE(15)}<g${o.sway ? ` class="sway" style="${st}"` : ''}>
       <path d="M-2.6,0 L-1.8,-22 L1.8,-22 L2.6,0Z" fill="#6b4a2b"/>
@@ -431,7 +441,7 @@
       <circle cx="5" cy="-7" r="3.2" fill="${c}"/><ellipse cx="3.6" cy="-12.5" rx="1.2" ry="4" fill="${c}" transform="rotate(-12 3.6 -12.5)"/><ellipse cx="6" cy="-12.5" rx="1.2" ry="4" fill="${c}" transform="rotate(10 6 -12.5)"/>
       <ellipse cx="6" cy="-12.2" rx=".5" ry="2.6" fill="#f5b5c0" transform="rotate(10 6 -12.2)"/><circle cx="6.4" cy="-7.4" r=".7" fill="#222"/><circle cx="8" cy="-6.4" r=".6" fill="#e58a9a"/>${extra}</g>`;
   }
-  const MICROBUS = vehicle([...W4(-20, -11, 10, 8), ...W4(12, 21, 10, 8), [-26, 26, -10, 10, 3, 16, '#f4f4f4'], [-26, 26, -10.3, 10.3, 9, 11.5, '#2e6fb5'],
+  const MICROBUS = vehicle([...W4(-20, -11, 10, 8), ...W4(12, 21, 10, 8), [-26, 26, -10, 10, 3, 16, '#f4f4f4'], [-26, 26, -10.3, 10.3, 6, 12, '#e0a91f'],
     [-24, 24, -10, 10, 16, 24, '#bfe3f5'], [-26, 26, -10, 10, 24, 27, '#f4f4f4']]);
   const KAYAK = vehicle([[-14, 14, -3.5, 3.5, 0, 3, '#e67e22'], [-3, 3, -2.5, 2.5, 3, 11, '#3d7dd9'], [-1.5, 1.5, -1.5, 1.5, 11, 15, '#f1c7a0']]);
 
@@ -534,7 +544,7 @@
   road(S_HWY, 40, true); road(N_HWY, 40, true); road(NW_HWY, 40, true);
   road([[505, 1020], [505, 1070], [580, 1165]], 24);                  // Dallas (oeste)
   road([[250, 682], [250, 860], [335, 965]], 22);                     // subida do Espaço Ágape
-  road([[239, 792], [212, 792]], 18);                                 // ramal do Elton
+  road([[239, 792], [212, 792]], 18);                                 // ramal do Sítio Vicenci
   road([[1060, 1036], [1060, 150], [1016, 150]], 24);    // Fazenda Fracasso e Belusso
   road([[1072, 470], [1102, 470]], 20);
   road([[1262, 1236], [1540, 878]], 24);                              // acesso à Kaskata
@@ -554,13 +564,17 @@
 
   const WALLS = ['#f6c1b4', '#bfe0c7', '#f8e1a1', '#c9d6f2', '#f3c6e0', '#e8d6b8', '#bfe3f5', '#f4f1ea', '#f7d6a8'];
   const ROOFS = ['#b5452f', '#a0522d', '#8e3b2a', '#c0563a', '#6d4c41'];
-  // luzes de Natal ao longo de uma linha (pontos já na tela), piscando em cores alternadas
-  const XMAS = ['#ff4d4d', '#ffd23f', '#4dd36b', '#4db8ff', '#ff8ad8'];
+  // luzes de Natal ao longo de uma linha (pontos já na tela), piscando em cores alternadas.
+  // Pisca-pisca sem animação por lâmpada (centenas delas pesavam a cada quadro): cada lâmpada pinta com
+  // uma "tinta" compartilhada por cor e grupo (a/b), e um temporizador acende e apaga as tintas.
+  const XMAS = ['#ff4d4d', '#ffd23f', '#4dd36b', '#4db8ff', '#ff8ad8', '#ffe27a']; // a última é o brilho da estrela
+  const lamp = (k, b) => `url(#lz${k}${b ? 'b' : 'a'})`;
+  if (NATAL) XMAS.forEach((c, k) => { for (const g of 'ab') defs += `<linearGradient id="lz${k}${g}"><stop class="lz-${g}" stop-color="${c}"/></linearGradient>`; });
   function bulbs(pts, step = 6, r = 1.5) {
     let t = `<path d="M${pts.map(pt).join(' L')}" stroke="#2c3a21" stroke-width=".5" fill="none" opacity=".7"/>`, n = 0;
     for (let i = 1; i < pts.length; i++) {
       const a = pts[i - 1], b = pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      for (let u = 0; u < L; u += step, n++) t += `<circle class="twinkle" cx="${f(a[0] + (b[0] - a[0]) * u / L)}" cy="${f(a[1] + (b[1] - a[1]) * u / L)}" r="${r}" fill="${XMAS[n % XMAS.length]}" style="animation-delay:-${((n * .37) % 1.6).toFixed(2)}s"/>`;
+      for (let u = 0; u < L; u += step, n++) t += `<circle cx="${f(a[0] + (b[0] - a[0]) * u / L)}" cy="${f(a[1] + (b[1] - a[1]) * u / L)}" r="${r}" fill="${lamp(n % 5, n % 2)}"/>`;
     }
     return t;
   }
@@ -868,7 +882,7 @@
     pinScreen('agape', 405 + CX - 1200, 606 + CY - 170);
   }
 
-  // --- Elton: sítio com parreiral e o micro-ônibus (um pouco ao norte do Ágape) ---
+  // --- Sítio Vicenci: parreiral e o micro-ônibus (um pouco ao norte do Ágape) ---
   {
     reserve(96, 720, 242, 846);
     G += quad(98, 722, 238, 842, '#a9d27c');
@@ -891,7 +905,7 @@
       <ellipse cx="4" cy="-19" rx="5" ry="3.6" fill="#bfe3f5"/><circle cx="7" cy="-22" r="2.6" fill="#f5d2b3"/><path d="M5,-23.5 q2,-2 4,0" stroke="#c9a063" stroke-width=".9" fill="none"/></g>`, 4, 'elton');
     sprite(166, 845, `${shadowE(6, 2)}<path d="M-6,-1 h12 l-2,-6 h-8Z" fill="#b5835a"/>${[[-3, -8], [0, -9], [3, -8], [-1.5, -10], [1.5, -10]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="1.5" fill="#5b2a6e"/>`).join('')}`, 3, 'elton');
     add(216, 724, 240, 780, parked(MICROBUS, 6, 228, 752), 'elton');
-    sprite(212, 816, signS([['ELTON', 8, 'Montserrat,sans-serif', 800, '#5b2a6e'], ['parreiral', 5, 'Georgia,serif', 700, '#3f7a2c']], { w: 40, h: 20, bg: '#f6efe1', post: '#7a4a24' }), 7, 'elton');
+    sprite(212, 816, signS([['SÍTIO', 5, 'Montserrat,sans-serif', 700, '#5b2a6e'], ['VICENCI', 8, 'Montserrat,sans-serif', 800, '#5b2a6e'], ['parreiral', 5, 'Georgia,serif', 700, '#3f7a2c']], { w: 48, h: 26, bg: '#f6efe1', post: '#7a4a24' }), 7, 'elton');
     pin('elton', 152, 790, 52);
   }
 
@@ -1441,6 +1455,17 @@
   // um ponto livre junto de cada estabelecimento da associação (árvore de Natal, bandeira...)
   const ESTAB = [[628, 568, 'pipinos'], [626, 880, 'majestade'], [738, 960, 'vicato'], [758, 692, 'artesao'], [588, 1400, 'dallas'], [176, 748, 'elton'],
     [-142, 1003, 'vivaflor'], [-200, 815, 'moterle'], [230, 318, 'angico'], [1508, 905, 'kaskata'], [985, 120, 'belusso'], [1300, 452, 'fracasso', 22], [848, 1172, 'flora']];
+  // espalha até n enfeites em pontos livres em volta de (x, y): fora de prédios, ruas, rios e lagos
+  const inLake = (x, y) => lakes.some(l => ((x - l.cx) / (l.rx + 10)) ** 2 + ((y - l.cy) / (l.ry + 10)) ** 2 < 1);
+  function scatter(x, y, R, n, fn, m = 4) {
+    for (let i = 0, k = 0; i < n * 14 && k < n; i++) {
+      const a = rr(0, 6.283), d = rr(9, R), px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
+      if (!freeSpot(px, py, m) || nearRoad(px, py, 2) || inLake(px, py) || !visible(px, py, 0)) continue;
+      fn(px, py, k++);
+    }
+  }
+  // em volta de cada estabelecimento (no morro da Fracasso, perto do ponto, para não flutuar)
+  const aroundEstab = (n, fn, R = 46) => { for (const [x, y, spot, z] of ESTAB) scatter(x, y, z ? 24 : R, n, (px, py, k) => fn(px, py, spot, z || 0, k)); };
 
   // --- Natal --------------------------------------------------------
   const GIFT = [['#d7261e', '#ffd23f'], ['#2f8f4e', '#ffffff'], ['#3d7dd9', '#ffd23f'], ['#ffd23f', '#d7261e'], ['#9b59b6', '#ffffff'], ['#ffffff', '#d7261e'], ['#e67e22', '#2f8f4e']];
@@ -1456,8 +1481,8 @@
     let t = `${shadowE(13, 4)}<rect x="-2.2" y="-8" width="4.4" height="8" fill="#6b4a2b"/><rect x="-6" y="-5" width="12" height="5" rx="1" fill="#c0392b"/>
       <path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L-18,-6 L-9,-16 L-15,-16 L-6,-30 L-11,-30Z" fill="#2f7a3a"/><path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L4,-6Z" fill="#000" opacity=".12"/>`;
     [[-6, -33], [3, -38], [7, -29], [-10, -22], [0, -24], [10, -19], [-13, -11], [-4, -13], [6, -10], [14, -9]]
-      .forEach(([x, y], i) => (t += `<circle class="twinkle" cx="${x}" cy="${y}" r="1.8" fill="${XMAS[i % XMAS.length]}" style="animation-delay:-${(i * .29 % 1.6).toFixed(2)}s"/>`));
-    t += `<g opacity=".3"><circle cy="-51" r="9" fill="#ffe27a" class="twinkle"/></g>${star(-51)}`;
+      .forEach(([x, y], i) => (t += `<circle cx="${x}" cy="${y}" r="1.8" fill="${lamp(i % 5, i % 2)}"/>`));
+    t += `<circle cy="-51" r="9" fill="${lamp(5, 0)}" fill-opacity=".3"/>${star(-51)}`;
     // presentes ao pé da árvore
     t += `<g transform="translate(-12,4)">${giftS(0, 8, 7)}</g><g transform="translate(11,5)">${giftS(2, 7, 6)}</g><g transform="translate(-1,7)">${giftS(4, 9, 5)}</g>`;
     return `<g transform="scale(${s})">${t}</g>`;
@@ -1505,17 +1530,19 @@
     // presépio iluminado junto à igreja e luzes na sananduva da praça
     sprite(792, 574, `<g transform="scale(.8)">${presepioS()}</g>`, 10, 'igreja');
     sprite(746, 746, sananduvaLightsS(.72), 16, 'praca');
-    // presentes espalhados pelas quadras da cidade
-    for (let i = 0, n = 0; i < 500 && n < 34; i++) {
+    // presentes (grandes, para aparecer bem) espalhados pelas quadras da cidade e pelas propriedades
+    const gift = () => `<g transform="scale(${f(rr(1.35, 1.6))})">${rnd() < .4 ? giftPile((rnd() * 7) | 0) : `${shadowE(6, 2)}${giftS((rnd() * 7) | 0, rr(6, 9), rr(5, 8))}`}</g>`;
+    for (let i = 0, n = 0; i < 900 && n < 70; i++) {
       const [a, b] = pick(BL), [c, d] = pick(BL), x = rr(a + 3, b - 3), y = rr(c + 3, d - 3);
       if (!freeSpot(x, y, 5)) continue;
-      sprite(x, y, rnd() < .35 ? giftPile((rnd() * 7) | 0) : `${shadowE(6, 2)}${giftS((rnd() * 7) | 0, rr(6, 9), rr(5, 8))}`, 3); n++;
+      sprite(x, y, gift(), 4); n++;
     }
+    aroundEstab(6, (x, y, spot, z) => sprite(x, y, gift(), 5, spot, z));
   });
 
   // --- Páscoa -------------------------------------------------------
   const EGG = ['#e84393', '#3d7dd9', '#f1c40f', '#2ecc71', '#9b59b6', '#e67e22', '#ff8ad8', '#4db8ff'];
-  const eggS = (c1, c2, sh = true) => `${sh ? '<ellipse rx="3.6" ry="1.3" fill="#000" opacity=".15"/>' : ''}<path d="M0,-9 C3.2,-9 4,-4.5 4,-3 C4,-.6 2.2,.6 0,.6 C-2.2,.6 -4,-.6 -4,-3 C-4,-4.5 -3.2,-9 0,-9Z" fill="${c1}"/>
+  const eggS = (c1, c2, sh = true) => `${sh ? '<ellipse rx="3.6" ry="1.3" fill="#000" opacity=".15"/>' : ''}<path d="M0,-9 C3.2,-9 4,-4.5 4,-3 C4,-.6 2.2,.6 0,.6 C-2.2,.6 -4,-.6 -4,-3 C-4,-4.5 -3.2,-9 0,-9Z" fill="${c1}" stroke="#fff" stroke-width=".6"/>
     <path d="M-3.9,-4.2 Q0,-2.4 3.9,-4.2 L3.7,-2.6 Q0,-.9 -3.7,-2.6Z" fill="${c2}"/><circle cx="-1.4" cy="-6.6" r=".8" fill="#fff" opacity=".7"/>`;
   function crossS() {
     // cruz de madeira com o manto roxo da Quaresma; no domingo e na segunda de Páscoa o manto fica branco
@@ -1540,14 +1567,28 @@
       <g transform="translate(27,0) scale(-1,1)">${rabbit('#d9c3a5', toque + `<g transform="translate(10,-4) scale(.6)">${eggS('#6b3a1f', '#f1c40f')}</g>`)}</g>
       <g transform="translate(-2,2)"><path d="M-7,0 h14 l-1.5,-5 h-11Z" fill="#b5835a"/>${choc(-3.5, -4, '#e84393')}${choc(.5, -4.5, '#3d7dd9')}${choc(4, -4, '#f1c40f')}</g>`;
   }
+  // ovo grande no chão, para aparecer bem no mapa
+  const bigEgg = (s = 1.6) => `<g transform="scale(${f(s)})">${eggS(pick(EGG), pick(EGG))}</g>`;
+  function eggBasketS() {
+    // cesta de vime cheia de ovos, com alça e laço
+    const ovo = (x, y, r = 0) => `<g transform="translate(${x},${y}) rotate(${r})">${eggS(pick(EGG), pick(EGG), false)}</g>`;
+    return `${shadowE(14, 4)}<path d="M-12,-9 Q0,-34 12,-9" stroke="#8a5a2b" stroke-width="2.2" fill="none"/>
+      ${ovo(-7, -8, -14)}${ovo(0, -10)}${ovo(7, -8, 14)}${ovo(-3.5, -6, -6)}${ovo(4, -6, 8)}
+      <path d="M-13,-9 H13 L10,0 H-10Z" fill="#c08a4e"/><path d="M-12,-6 H12 M-11,-3 H11" stroke="#8a5a2b" stroke-width=".8"/>
+      <path d="M-13,-9 H13" stroke="#8a5a2b" stroke-width="1.6"/><path d="M-6,-1 V-9 M0,-1 V-9 M6,-1 V-9" stroke="#a8743f" stroke-width=".7"/>
+      <path d="M-4,-24 l-4,-3 v6Z M4,-24 l4,-3 v6Z" fill="#e84393"/><circle cy="-24" r="1.6" fill="#c2185b"/>`;
+  }
   if (PASCOA) alt(() => {
     sprite(792, 574, crossS(), 10, 'igreja');
-    // ovos coloridos escondidos pelas quadras da cidade
-    for (let i = 0, n = 0; i < 500 && n < 60; i++) {
+    // ovos coloridos espalhados pelas quadras da cidade
+    for (let i = 0, n = 0; i < 900 && n < 110; i++) {
       const [a, b] = pick(BL), [c, d] = pick(BL), x = rr(a + 2, b - 2), y = rr(c + 2, d - 2);
       if (!freeSpot(x, y, 4)) continue;
-      sprite(x, y, eggS(pick(EGG), pick(EGG)), 2); n++;
+      sprite(x, y, bigEgg(rr(1.4, 1.8)), 3); n++;
     }
+    // em cada propriedade da associação: uma cesta cheia de ovos e ovos grandes pelo pátio
+    for (const [x, y, spot, z] of ESTAB) sprite(x, y, `<g transform="scale(1.3)">${eggBasketS()}</g>`, 7, spot, z || 0);
+    aroundEstab(8, (x, y, spot, z) => sprite(x, y, bigEgg(rr(1.6, 2)), 3, spot, z));
     // Dallas: coelhos fabricando ovos de chocolate
     sprite(470, 1160, chocolateS(), 14, 'dallas');
     // coelhos pulando pela cidade e pelo campo, com um ovo de Páscoa nas costas
@@ -1632,16 +1673,28 @@
   });
 
   // --- Primavera ----------------------------------------------------
-  const BED = ['#e84393', '#f1c40f', '#ffffff', '#e74c3c', '#9b59b6', '#f39c12', '#ff8ad8'];
+  const BED = ['#ff2d87', '#ffd23f', '#ffffff', '#ff3b30', '#b86bf0', '#ff9f1a', '#ff8ad8'];
   function bed(x0, y0, x1, y1) {
     let t = quad(x0, y0, x1, y1, '#7a5a3a');
-    for (let i = 0; i < 5; i++) { const q = P(rr(x0 + 1, x1 - 1), rr(y0 + 1, y1 - 1)); t += `<circle cx="${f(q[0])}" cy="${f(q[1])}" r="1.9" fill="#4f8a35"/>`; }
-    for (let i = 0; i < 8; i++) { const q = P(rr(x0 + 1, x1 - 1), rr(y0 + 1, y1 - 1)); t += `<circle cx="${f(q[0])}" cy="${f(q[1] - .6)}" r="${f(rr(1.1, 1.7))}" fill="${pick(BED)}"/>`; }
+    for (let i = 0; i < 6; i++) { const q = P(rr(x0 + 1, x1 - 1), rr(y0 + 1, y1 - 1)); t += `<circle cx="${f(q[0])}" cy="${f(q[1])}" r="2.2" fill="#4f8a35"/>`; }
+    for (let i = 0; i < 13; i++) { const q = P(rr(x0 + 1, x1 - 1), rr(y0 + 1, y1 - 1)); t += bloom(q[0], q[1] - .8, rr(1.5, 2.3), pick(BED)); }
     return t;
   }
-  const bushS = c => `${shadowE(9, 3)}<circle cx="-4.5" cy="-5" r="5.2" fill="#4f8a35"/><circle cx="4.5" cy="-5" r="5.6" fill="#5e9a3c"/><circle cx="0" cy="-9.5" r="5.4" fill="#6aa846"/>`
-    + Array.from({ length: 10 }, () => `<circle cx="${f(rr(-8.5, 8.5))}" cy="${f(rr(-14, -2.5))}" r="${f(rr(1.1, 1.8))}" fill="${c}"/>`).join('');
+  const bushS = (c, s = 1) => `<g transform="scale(${s})">${shadowE(10, 3.4)}<circle cx="-5" cy="-5.5" r="5.8" fill="#4f8a35"/><circle cx="5" cy="-5.5" r="6.2" fill="#5e9a3c"/><circle cx="0" cy="-10.5" r="6" fill="#6aa846"/>`
+    + Array.from({ length: 15 }, () => bloom(rr(-9.5, 9.5), rr(-15.5, -2.5), rr(1.6, 2.5), rnd() < .85 ? c : '#ffffff')).join('') + '</g>';
+  // touceira de flores de jardim: hastes com flores grandes
+  function flowersS(c) {
+    let t = `${shadowE(9, 3)}<ellipse cx="0" cy="-1" rx="9.5" ry="3.6" fill="#4f8a35"/><path d="M-8,-1 q2,-6 4,-2 M3,-1 q3,-6 5,-1" stroke="#5e9a3c" stroke-width="2" fill="none"/>`;
+    for (let i = 0; i < 8; i++) {
+      const x = rr(-8, 8), h = rr(5, 12);
+      t += `<path d="M${f(x)},-1 V${f(-h)}" stroke="#3f7a2c" stroke-width=".9"/>${bloom(x, -h, rr(2, 2.9), rnd() < .7 ? c : pick(BED))}`;
+    }
+    return t;
+  }
   if (PRIMAVERA) alt(() => {
+    // propriedades da associação: um ipê florido, arbustos floridos e touceiras de flores em volta
+    for (const [x, y, spot, z] of ESTAB) scatter(x, y, z ? 24 : 40, 1, (px, py) => sprite(px, py, treeS(.85, '#5e9a3c', { ipe: true }), 8, spot, z || 0));
+    aroundEstab(7, (x, y, spot, z, k) => sprite(x, y, k % 2 ? bushS(pick(BED), 1.15) : flowersS(pick(BED)), 6, spot, z));
     // canteiros nas calçadas das quadras (no chão: prédios e casas ficam por cima)
     for (const [a, b] of BL) for (const [c, d] of BL) {
       for (let u = a + 10; u < b - 22; u += 30) G += bed(u, c + 1, u + 16, c + 5) + bed(u, d - 5, u + 16, d - 1);
@@ -1859,7 +1912,7 @@
     })(start);
   }
 
-  // Natal: Papai Noel e as renas cruzam o céu de tempos em tempos
+  // Natal: Papai Noel e as renas sobrevoam a cidade de tempos em tempos
   const reindeer = (x, lead) => `<g transform="translate(${x},-12)">
     <g class="deer-leg" style="transform-origin:-5px 2px"><path d="M-5,2 L-7,9" stroke="#6b4a2b" stroke-width="1.6" stroke-linecap="round"/></g>
     <g class="deer-leg" style="transform-origin:5px 2px;animation-direction:alternate-reverse"><path d="M5,2 L7,9" stroke="#6b4a2b" stroke-width="1.6" stroke-linecap="round"/></g>
@@ -1878,14 +1931,16 @@
     <path d="M5,-13 Q20,-20 36,-20 M5,-13 Q36,-26 64,-20" stroke="#7a4a24" stroke-width=".7" fill="none"/>
     ${reindeer(28, false)}${reindeer(56, true)}</g>`;
   function flySanta() {
+    // atravessa o mapa de um lado ao outro baixando sobre a cidade (no meio do caminho fica em cima dela)
     const g = document.createElementNS(NS, 'g');
-    g.innerHTML = SANTA;
+    g.innerHTML = `<ellipse cx="-4" cy="-10" rx="62" ry="26" fill="#fffbe6" fill-opacity=".35"/>${SANTA}`;
     fx.appendChild(g);
-    const y0 = rr(110, 210), dur = rr(15000, 19000), start = performance.now();
+    const dir = rnd() < .5 ? 1 : -1, y0 = rr(580, 720), dip = rr(220, 320), dur = rr(17000, 21000), start = performance.now();
     (function step(now) {
       const p = (now - start) / dur;
       if (p >= 1) { g.remove(); return; }
-      g.setAttribute('transform', `translate(${f(-200 + (W + 400) * p)},${f(y0 - p * 40 + Math.sin(p * Math.PI * 3) * 12)}) scale(1.15)`);
+      const x = dir > 0 ? -260 + (W + 520) * p : W + 260 - (W + 520) * p;
+      g.setAttribute('transform', `translate(${f(x)},${f(y0 + Math.sin(p * Math.PI) * dip + Math.sin(p * Math.PI * 5) * 10)}) scale(${dir * 2.3},2.3)`);
       requestAnimationFrame(step);
     })(start);
   }
@@ -1952,10 +2007,19 @@
       if (visibleNow && document.visibilityState === 'visible') { firework(); if (rnd() < .35) setTimeout(firework, rr(150, 450)); }
       setTimeout(fogos, rr(700, 1800));
     })();
+    // pisca-pisca de Natal: alterna os dois grupos de lâmpadas a cada 0,6 s (só troca as tintas compartilhadas)
+    if (NATAL) {
+      const A = svg.querySelectorAll('.lz-a'), B = svg.querySelectorAll('.lz-b');
+      let on = true;
+      const blink = () => { A.forEach(s => s.setAttribute('stop-opacity', on ? 1 : .3)); B.forEach(s => s.setAttribute('stop-opacity', on ? .3 : 1)); };
+      blink();
+      setInterval(() => { if (visibleNow && document.visibilityState === 'visible') { on = !on; blink(); } }, 600);
+    }
+    // espera o mapa aparecer na tela para soltar o trenó; depois volta a cada meio minuto, mais ou menos
     if (NATAL) setTimeout(function santaLoop() {
-      if (visibleNow && document.visibilityState === 'visible') flySanta();
-      setTimeout(santaLoop, rr(25000, 40000));
-    }, 4000);
+      if (visibleNow && document.visibilityState === 'visible') { flySanta(); setTimeout(santaLoop, rr(24000, 32000)); }
+      else setTimeout(santaLoop, 1500);
+    }, 1500);
   }
 
   // ==================================================================
