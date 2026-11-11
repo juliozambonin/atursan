@@ -15,6 +15,11 @@
   const rad = d => d * Math.PI / 180;
   const f = n => (+n).toFixed(1);
   const neg = max => `animation-delay:-${rr(0, max).toFixed(2)}s`;
+  // Traços "correndo" (água dos rios, cachoeiras, esteira): três cópias do tracejado, cada uma um terço de
+  // passo à frente, que se revezam por opacidade. Opacidade o navegador anima na GPU; já stroke-dashoffset
+  // animado obrigava a thread principal a redesenhar o mapa a cada quadro.
+  const flowing = (make, period, dur) => [0, 1, 2].map(k =>
+    `<g class="flow3${k ? '' : ' k0'}" style="animation-duration:${dur}s;animation-delay:-${(dur * ((3 - k) % 3) / 3).toFixed(2)}s">${make(-k * period / 3)}</g>`).join('');
 
   // mapa com folga nas bordas: o horizonte fica em ~y 300 e o terreno começa bem abaixo dele
   const W = 2700, H = 1700, CX = 1350, CY = 280;
@@ -53,7 +58,8 @@
   // chão por tema: no outono tudo mais pálido e os verdes puxando para o amarelo; no inverno, geada nos campos
   function groundColor(c) {
     const [h, s, l] = toHsl(c);
-    if (INVERNO && h > 44 && h < 170 && s > .1) return fromHsl(195, .22, .86 + l * .06);
+    // geada: tudo esbranquiçado, mas guardando parte do claro/escuro de cada talhão (a colcha de lavouras não some)
+    if (INVERNO && h > 44 && h < 170 && s > .1) return fromHsl(190 + (h - 100) * .12, .2, .7 + l * .3);
     if (OUTONO) return fromHsl(h > 60 && h < 170 ? h + (50 - h) * .45 : h, s * .6, l + (1 - l) * .1);
     return c;
   }
@@ -291,10 +297,12 @@
     const prenda = FARRAPOS && (o.dress || o.long), peao = FARRAPOS && !prenda;
     const lw = peao ? 5.2 : 3.6, bota = peao ? '<path d="M0,-3.2 L0,0 L2.4,0" stroke="#1d1d1d" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' : '';
     let s = `<ellipse rx="7" ry="2.5" fill="#000" opacity=".15"/>`;
-    s += `<g class="${walk ? 'leg-a' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="${lw}" stroke-linecap="round"/>${bota}</g>`;
-    s += `<g class="${walk ? 'leg-b' : ''}" style="transform-origin:0px -12px;${d}"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="${lw}" stroke-linecap="round"/>${bota}</g>`;
+    // as duas pernas num grupo só, abertas em tesoura: inverter o grupo na horizontal faz o passo
+    // (uma animação por pessoa em vez de duas: cada elemento animado vira uma camada na GPU)
+    const leg = a => `<g transform="rotate(${walk ? a : 0} 0 -12)"><path d="M0,-12 L0,0" stroke="${pants}" stroke-width="${lw}" stroke-linecap="round"/>${bota}</g>`;
+    s += `<g class="${walk ? 'legs' : ''}" style="transform-origin:0px -12px;${d}">${leg(-22)}${leg(22)}</g>`;
     if (prenda) s += vestidoPrenda(shirt);
-    s += `<g class="${walk ? 'walk-bob' : ''}" style="${d}">`;
+    s += `<g>`;
     s += o.dress ? `<path d="M-4,-26 L4,-26 L7.5,-9 L-7.5,-9Z" fill="${shirt}"/>` : `<rect x="-4.5" y="-26" width="9" height="15" rx="3" fill="${shirt}"/>`;
     if (peao) s += LENCO;
     if (INVERNO) s += coat(shirt, -26, o.dress ? 17.5 : 16.5);
@@ -374,7 +382,7 @@
       ${r ? `<g transform="translate(11,2) scale(-.5,.5)">${seated({})}</g>` : ''}`;
   }
   const benchS = (who = '') => `${shadowE(12, 4)}<rect x="-12" y="-7" width="24" height="3" fill="#7a5232"/><rect x="-12" y="-13" width="24" height="2.5" fill="#8a6038"/><path d="M-10,-4 V0 M10,-4 V0" stroke="#444" stroke-width="2"/>${who}`;
-  const lampS = () => `<path d="M0,0 V-34" stroke="#2d3436" stroke-width="2"/><circle cy="-36" r="4" fill="#fff3b0" class="twinkle"/>`;
+  const lampS = () => `<path d="M0,0 V-34" stroke="#2d3436" stroke-width="2"/><circle cy="-36" r="4" fill="#fff3b0"/>`;
   function signS(lines, o = {}) {
     const w = o.w || 70, h = o.h || 26, bg = o.bg || '#f7f2e8', fg = o.fg || '#34452a', post = o.post || '#6b4a2b';
     let t = '';
@@ -564,19 +572,19 @@
 
   const WALLS = ['#f6c1b4', '#bfe0c7', '#f8e1a1', '#c9d6f2', '#f3c6e0', '#e8d6b8', '#bfe3f5', '#f4f1ea', '#f7d6a8'];
   const ROOFS = ['#b5452f', '#a0522d', '#8e3b2a', '#c0563a', '#6d4c41'];
-  // luzes de Natal ao longo de uma linha (pontos já na tela), piscando em cores alternadas.
-  // Pisca-pisca sem animação por lâmpada (centenas delas pesavam a cada quadro): cada lâmpada pinta com
-  // uma "tinta" compartilhada por cor e grupo (a/b), e um temporizador acende e apaga as tintas.
-  const XMAS = ['#ff4d4d', '#ffd23f', '#4dd36b', '#4db8ff', '#ff8ad8', '#ffe27a']; // a última é o brilho da estrela
-  const lamp = (k, b) => `url(#lz${k}${b ? 'b' : 'a'})`;
-  if (NATAL) XMAS.forEach((c, k) => { for (const g of 'ab') defs += `<linearGradient id="lz${k}${g}"><stop class="lz-${g}" stop-color="${c}"/></linearGradient>`; });
+  // luzes de Natal ao longo de uma linha (pontos já na tela), em cores alternadas. As lâmpadas de cada
+  // cordão ficam em dois grupos que piscam alternados por opacidade (classe pisca): assim quem anima é a
+  // GPU, com dois elementos por cordão — e não uma animação por lâmpada, nem um redesenho a cada piscada.
+  const XMAS = ['#ff4d4d', '#ffd23f', '#4dd36b', '#4db8ff', '#ff8ad8'];
+  const pisca = (a, b) => `<g class="pisca">${a}</g><g class="pisca b">${b}</g>`;
   function bulbs(pts, step = 6, r = 1.5) {
-    let t = `<path d="M${pts.map(pt).join(' L')}" stroke="#2c3a21" stroke-width=".5" fill="none" opacity=".7"/>`, n = 0;
+    const g = ['', ''];
+    let n = 0;
     for (let i = 1; i < pts.length; i++) {
       const a = pts[i - 1], b = pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      for (let u = 0; u < L; u += step, n++) t += `<circle cx="${f(a[0] + (b[0] - a[0]) * u / L)}" cy="${f(a[1] + (b[1] - a[1]) * u / L)}" r="${r}" fill="${lamp(n % 5, n % 2)}"/>`;
+      for (let u = 0; u < L; u += step, n++) g[n % 2] += `<circle cx="${f(a[0] + (b[0] - a[0]) * u / L)}" cy="${f(a[1] + (b[1] - a[1]) * u / L)}" r="${r}" fill="${XMAS[n % XMAS.length]}"/>`;
     }
-    return t;
+    return `<path d="M${pts.map(pt).join(' L')}" stroke="#2c3a21" stroke-width=".5" fill="none" opacity=".7"/>` + pisca(g[0], g[1]);
   }
   function roofLights(x, y, w, d, h, rh, along, ov = 3) {
     const X0 = x - ov, X1 = x + w + ov, Y0 = y - ov, Y1 = y + d + ov;
@@ -793,7 +801,7 @@
     tw += `<g transform="${fr(802, 916, 72)}">${faceV(true)}</g>`;
     add(744, 858, 802, 916, tw, 'vicato');
     const a = P(772, 917, 32), b = P(772, 962, 5);
-    let cv = `<path d="M${pt(a)} L${pt(b)}" stroke="#3a3a3a" stroke-width="5" stroke-linecap="round"/><path class="belt" d="M${pt(a)} L${pt(b)}" stroke="#9a9a9a" stroke-width="2" stroke-dasharray="6 10"/>`;
+    let cv = `<path d="M${pt(a)} L${pt(b)}" stroke="#3a3a3a" stroke-width="5" stroke-linecap="round"/>` + flowing(o => `<path d="M${pt(a)} L${pt(b)}" stroke="#9a9a9a" stroke-width="2" stroke-dasharray="6 10" stroke-dashoffset="${f(o)}"/>`, 16, .6);
     cv += line(P(772, 932, 23), P(772, 932, 0), '#555', 2) + line(P(772, 948, 13), P(772, 948, 0), '#555', 2);
     for (let i = 0; i < 7; i++) cv += `<g transform="translate(${f(a[0])},${f(a[1] - 3)})"><circle class="flour flour-iso" r="${f(rr(1.8, 2.8))}" fill="#fffdf4" style="--fx:${f(b[0] - a[0])}px;--fy:${f(b[1] - a[1])}px;animation-delay:-${(i * .34).toFixed(2)}s"/></g>`;
     add(766, 917, 778, 962, cv, 'vicato');
@@ -1035,7 +1043,7 @@
     // riacho que segue para o norte até o fim do mapa
     const riacho = [[1430, 415], [1390, 350], [1340, 285], [1300, 220], [1250, 165], [1200, 110], [1140, 50], [1080, -10], [1030, -60]];
     G += `<path d="${strip(riacho, 18)}" fill="#7e9a5a"/><path d="${strip(riacho, 12)}" fill="#6fa6bd"/>`;
-    G += `<path class="river" d="M${riacho.map(p => pt(P(p[0], p[1]))).join(' L')}" stroke="#e4f4fa" stroke-width="1.4" fill="none" stroke-dasharray="4 16"/>`;
+    G += flowing(o => `<path d="M${riacho.map(p => pt(P(p[0], p[1]))).join(' L')}" stroke="#e4f4fa" stroke-width="1.4" fill="none" stroke-dasharray="4 16" stroke-dashoffset="${f(o)}"/>`, 20, 1);
     for (let i = 0; i < 9; i++) {
       const k = (rnd() * (riacho.length - 1)) | 0, t = rnd(), a = riacho[k], b = riacho[k + 1];
       const p = P(a[0] + (b[0] - a[0]) * t + rr(-3, 3), a[1] + (b[1] - a[1]) * t + rr(-6, 6));
@@ -1291,13 +1299,15 @@
     }
     G += `<path d="${taper(rioV, largV, 1.3)}" fill="#8f8a5c"/><path d="${taper(rioV, largV)}" fill="#6fa6bd"/><path d="${taper(rioV, largV, .55)}" fill="#7fb6cb" opacity=".7"/>`;
     ROADS.push([rioV, 40]);
-    for (const off of [-.3, 0, .3]) {
+    const lanes = [-.3, 0, .3].map(off => {
       const lane = rioV.map((p, i) => {
         const a = rioV[Math.max(0, i - 1)], b = rioV[Math.min(rioV.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy);
         return P(p[0] - dy / n * largV[i] * off, p[1] + dx / n * largV[i] * off);
       });
-      G += `<path class="river" d="M${lane.map(pt).join(' L')}" stroke="#e4f4fa" stroke-width="1.8" fill="none" stroke-dasharray="5 22" style="${neg(1.6)}"/>`;
-    }
+      neg(1.6); // (sorteio mantido: o resto do mapa depende da sequência)
+      return `M${lane.map(pt).join(' L')}`;
+    });
+    G += flowing(o => lanes.map((d, i) => `<path d="${d}" stroke="#e4f4fa" stroke-width="1.8" fill="none" stroke-dasharray="5 22" stroke-dashoffset="${f(o + i * 9)}"/>`).join(''), 27, 1.2);
     const pedra = (x, y, s) => { const p = P(x, y); return `<g transform="translate(${f(p[0])},${f(p[1])}) scale(${f(s)})"><ellipse cx="0" cy="0" rx="9" ry="4.6" fill="#5e4a3a"/><ellipse cx="-1.5" cy="-1.6" rx="7" ry="3.2" fill="#8a6a4e"/><ellipse cx="-3" cy="-2.4" rx="3" ry="1.2" fill="#b08a66" opacity=".7"/></g>`; };
     for (const [i, t] of [[0, .55], [1, .3], [1, .72], [2, .4]]) {
       const a = rio[i], b = rio[i + 1], c = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
@@ -1306,14 +1316,17 @@
       const A = [c[0] + nx * hw, c[1] + ny * hw], B = [c[0] - nx * hw, c[1] - ny * hw];
       // a água corre de sul para norte: a queda fica virada para o observador
       G += poly([P(A[0], A[1], 6), P(B[0], B[1], 6), P(B[0], B[1], 0), P(A[0], A[1], 0)], '#e9f6fb');
+      const fios = [];
       for (let k = 0; k <= 12; k++) {
         const q = [A[0] + (B[0] - A[0]) * k / 12, A[1] + (B[1] - A[1]) * k / 12];
-        G += line(P(q[0], q[1], 6), P(q[0] + dx / n * 6, q[1] + dy / n * 6, 0), '#fff', 1.6, `class="fall" stroke-dasharray="4 3" style="${neg(.7)}"`);
+        fios.push([P(q[0], q[1], 6), P(q[0] + dx / n * 6, q[1] + dy / n * 6, 0), parseFloat(neg(.7).slice(17)) * 10]); // cada fio começa num ponto do tracejado
       }
+      G += flowing(o => fios.map(([a, b, d0]) => line(a, b, '#fff', 1.6, `stroke-dasharray="4 3" stroke-dashoffset="${f(o - d0)}"`)).join(''), 7, .45);
       for (let k = 0; k < 7; k++) {
         const q = [A[0] + (B[0] - A[0]) * rr(0, 1), A[1] + (B[1] - A[1]) * rr(0, 1)];
         const p = P(q[0] + dx / n * rr(8, 22), q[1] + dy / n * rr(8, 22));
-        G += `<g transform="translate(${f(p[0])},${f(p[1])})"><ellipse class="ripple" rx="${f(rr(8, 14))}" ry="${f(rr(3, 5))}" fill="#fff" opacity=".8" style="${neg(3)}"/></g>`;
+        const onda = `<g transform="translate(${f(p[0])},${f(p[1])})"><ellipse class="ripple" rx="${f(rr(8, 14))}" ry="${f(rr(3, 5))}" fill="#fff" opacity=".8" style="${neg(3)}"/></g>`;
+        if (k < 4) G += onda; // 4 ondas animadas por queda bastam (as 7 espumas fixas continuam)
         G += `<ellipse cx="${f(p[0] + rr(-6, 6))}" cy="${f(p[1] + rr(-2, 2))}" rx="${f(rr(5, 10))}" ry="${f(rr(1.6, 3))}" fill="#f4fbfd" opacity=".85"/>`;
       }
       for (let k = 0; k < 4; k++) { const u = rr(0, 1); G += pedra(A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u, rr(.7, 1.3)); }
@@ -1480,9 +1493,10 @@
   function xmasTreeS(s = 1) {
     let t = `${shadowE(13, 4)}<rect x="-2.2" y="-8" width="4.4" height="8" fill="#6b4a2b"/><rect x="-6" y="-5" width="12" height="5" rx="1" fill="#c0392b"/>
       <path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L-18,-6 L-9,-16 L-15,-16 L-6,-30 L-11,-30Z" fill="#2f7a3a"/><path d="M0,-50 L11,-30 L6,-30 L15,-16 L9,-16 L18,-6 L4,-6Z" fill="#000" opacity=".12"/>`;
+    const balls = ['', ''];
     [[-6, -33], [3, -38], [7, -29], [-10, -22], [0, -24], [10, -19], [-13, -11], [-4, -13], [6, -10], [14, -9]]
-      .forEach(([x, y], i) => (t += `<circle cx="${x}" cy="${y}" r="1.8" fill="${lamp(i % 5, i % 2)}"/>`));
-    t += `<circle cy="-51" r="9" fill="${lamp(5, 0)}" fill-opacity=".3"/>${star(-51)}`;
+      .forEach(([x, y], i) => (balls[i % 2] += `<circle cx="${x}" cy="${y}" r="1.8" fill="${XMAS[i % XMAS.length]}"/>`));
+    t += pisca(balls[0], balls[1]) + `<circle cy="-51" r="9" fill="#ffe27a" fill-opacity=".3"/>${star(-51)}`;
     // presentes ao pé da árvore
     t += `<g transform="translate(-12,4)">${giftS(0, 8, 7)}</g><g transform="translate(11,5)">${giftS(2, 7, 6)}</g><g transform="translate(-1,7)">${giftS(4, 9, 5)}</g>`;
     return `<g transform="scale(${s})">${t}</g>`;
@@ -1772,14 +1786,16 @@
       <circle cx="6" cy="3.6" r="4.8" fill="#c8483a" stroke="#7a2219" stroke-width="1.1"/>${[[4.6, 2.4], [7.4, 3.6], [5.4, 5.6], [7, 1.6]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r=".85" fill="#f6dfd2"/>`).join('')}</g>`
   };
   let pinsSVG = '';
-  for (const { id, p } of pins) {
+  const pinsAB = ['', '']; // os marcadores balançam em dois grupos alternados (duas camadas na GPU, não uma por marcador)
+  pins.forEach(({ id, p }, n) => {
     const d = DATA[id] || { title: id, emoji: '📍' }, w = d.title.length * 9.4 + 30;
-    pinsSVG += `<g class="pin-g" data-spot="${id}" tabindex="0" role="button" aria-label="${d.title}" transform="translate(${f(p[0])},${f(p[1])})"><g class="pin" style="${neg(2.2)}">
+    pinsAB[n % 2] += `<g class="pin-g" data-spot="${id}" tabindex="0" role="button" aria-label="${d.title}" transform="translate(${f(p[0])},${f(p[1])})"><g class="pin">
       <g class="pin-label"><rect x="${f(-w / 2)}" y="-96" width="${f(w)}" height="32" rx="16" fill="#fff" stroke="#d7261e" stroke-width="2.5"/>
         <text y="-74" text-anchor="middle" font-family="Montserrat,sans-serif" font-weight="700" font-size="16" fill="#34452a">${d.title}</text></g>
       <g class="pin-head"><path d="M0,0 C-5,-9 -17,-17 -17,-31 A17,17 0 1 1 17,-31 C17,-17 5,-9 0,0Z" fill="#d7261e" stroke="#fff" stroke-width="3"/>
         <circle cy="-31" r="12" fill="#fff"/>${d.icon && ICONS[d.icon] ? ICONS[d.icon] : `<text y="-25.5" text-anchor="middle" font-size="15">${d.emoji}</text>`}</g></g></g>`;
-  }
+  });
+  pinsSVG = `<g class="pin-bob">${pinsAB[0]}</g><g class="pin-bob" style="animation-delay:-1.1s">${pinsAB[1]}</g>`;
 
   svg.innerHTML = `<defs>${defs.replace(/<linearGradient id="mtG".*?<\/linearGradient>/, themeHill)}</defs>${BG}<g>${themeGround(G)}</g>${CL}<g id="objs">${sorted.map(o => `<g${o.spot ? ` data-spot="${o.spot}"` : ''}>${o.s}</g>`).join('')}</g><g id="mist" pointer-events="none">${MIST}</g><g id="fx"></g><g id="pins">${pinsSVG}</g>`;
 
@@ -1805,18 +1821,30 @@
     m.el = g;
   }
 
-  function posAt(m, t) {
-    let d, rev = false;
-    if (m.mode === 'ping') {
-      const u = (t * m.speed + m.phase * 2 * m.L) % (2 * m.L);
-      if (u < m.L) d = u; else { d = 2 * m.L - u; rev = true; }
-    } else d = (t * m.speed + m.phase * m.L) % m.L;
-    let sg = m.segs[m.segs.length - 1];
-    for (const s of m.segs) if (d < s.L0 + s.len) { sg = s; break; }
-    const k = sg.len ? (d - sg.L0) / sg.len : 0;
-    let dx = sg.b[0] - sg.a[0], dy = sg.b[1] - sg.a[1];
-    if (rev) { dx = -dx; dy = -dy; }
-    return [sg.a[0] + (sg.b[0] - sg.a[0]) * k, sg.a[1] + (sg.b[1] - sg.a[1]) * k, dx, dy];
+  // ------------------------------------------------------------------
+  // Movimento na GPU. Cada movimentador percorre o trajeto com uma animação (Web Animations) de
+  // transform, que o navegador roda fora da thread principal — como as animações CSS do mapa.
+  // (Mover por script a cada quadro obrigava a repintar e remontar as centenas de camadas do SVG:
+  // o mapa caía para ~20 quadros por segundo.) Aqui só se ajusta, de tempos em tempos, o que muda
+  // aos saltos: a profundidade (quem passa na frente de quem), o lado do veículo e o sumiço no horizonte.
+  // ------------------------------------------------------------------
+  const loops = []; // animações contínuas: pausam quando o mapa sai da tela
+  const T0 = 30;    // instante inicial da simulação (s): define onde cada um começa no trajeto
+  for (const m of movers) {
+    // trechos percorridos num ciclo (no vaivém, ida e volta)
+    const legs = m.segs.filter(s => s.len > 0).map(s => ({ a: s.a, b: s.b, len: s.len }));
+    if (m.mode === 'ping') legs.push(...legs.slice().reverse().map(s => ({ a: s.b, b: s.a, len: s.len })));
+    let acc = 0;
+    for (const s of legs) { s.L0 = acc; acc += s.len; s.dx = s.b[0] - s.a[0]; s.dy = s.b[1] - s.a[1]; }
+    m.legs = legs; m.LT = acc;
+    const tf = m.kind === 'veh'
+      ? ([x, y]) => `translate(${f(x - y)}px,${f((x + y) / 2 - m.z)}px)`
+      : ([x, y], s) => { const p = P0(x, y, m.z); return `translate(${f(p[0])}px,${f(p[1])}px) scale(${s.dx - s.dy < 0 ? -m.s : m.s},${m.s})`; };
+    const kf = [];
+    for (const s of legs) kf.push({ offset: s.L0 / acc, transform: tf(s.a, s) }, { offset: Math.min(1, (s.L0 + s.len) / acc), transform: tf(s.b, s) });
+    m.anim = m.el.animate(kf, { duration: acc / m.speed * 1000, iterations: Infinity });
+    m.anim.currentTime = ((T0 * m.speed + m.phase * acc) % acc) / m.speed * 1000;
+    loops.push(m.anim);
   }
 
   // para cada movimentador, só os objetos perto do seu trajeto podem cobri-lo
@@ -1827,89 +1855,132 @@
     m.near = [];
     sorted.forEach((o, i) => { if (o.x1 > x0 && o.x0 < x1 && o.y1 > y0 && o.y0 < y1) m.near.push(i); });
   }
+  // Caixa que cada objeto e cada movimentador ocupam na tela, medida uma vez: na conta da profundidade só
+  // entra quem de fato se sobrepõe ao movimentador (a ordem entre desenhos que não se tocam não importa).
+  for (const o of sorted) { const b = o.el.getBBox(); o.bx0 = b.x - 3; o.bx1 = b.x + b.width + 3; o.by0 = b.y - 3; o.by1 = b.y + b.height + 3; }
+  for (const m of movers) {
+    const veh = m.kind === 'veh', ox = veh ? CX : 0, oy = veh ? CY : 0, k = veh ? 1 : m.s;
+    if (veh) m.dirs[0].setAttribute('display', 'inline'); // (as oito vistas têm a mesma sombra, que dá a largura)
+    const b = m.el.getBBox();
+    if (veh) m.dirs[0].setAttribute('display', 'none');
+    m.hw = Math.max(Math.abs(b.x - ox), Math.abs(b.x + b.width - ox)) * k + 3; m.up = (oy - b.y) * k + (veh ? 8 : 3); m.dn = (b.y + b.height - oy) * k + 3;
+  }
 
-  function place(t, all) {
-    const vx0 = view.x - 140, vx1 = view.x + view.w + 140, vy0 = view.y - 90, vy1 = view.y + view.h + 180;
+  // onde o movimentador está depois de andar d no ciclo: [trecho, x, y]
+  function whereAt(m, d) {
+    let sg = m.legs[m.legs.length - 1];
+    for (const s of m.legs) if (d < s.L0 + s.len) { sg = s; break; }
+    const k = (d - sg.L0) / sg.len;
+    return [sg, sg.a[0] + sg.dx * k, sg.a[1] + sg.dy * k];
+  }
+  // Profundidade naquele ponto: tem de ficar depois do último objeto que está atrás (lo) e antes do
+  // primeiro que está na frente (hi); qualquer posição entre os dois serve.
+  function range(m, x, y) {
+    const me = { x0: x - m.r, x1: x + m.r, y0: y - m.r, y1: y + m.r }, cx = CX + x - y, cy = CY + (x + y) / 2 - m.z;
+    let lo = -1, hi = Infinity;
+    for (const i of m.near) {
+      const o = sorted[i];
+      if (o.bx1 < cx - m.hw || o.bx0 > cx + m.hw || o.by1 < cy - m.up || o.by0 > cy + m.dn) continue; // não se tocam na tela
+      if (behind(o, me)) lo = i; else if (i < hi && behind(me, o)) hi = i;
+    }
+    return [lo, hi];
+  }
+  // Confere onde cada um está e ajusta profundidade, lado e sumiço no horizonte.
+  // Devolve em quantos ms convém conferir de novo (antes, se um veículo está chegando numa curva).
+  function place() {
+    let next = 110;
     for (const m of movers) {
-      const [x, y, dx, dy] = posAt(m, t);
-      const qx = CX + x - y, qy = CY + (x + y) / 2 - m.z;
-      if (!all && (qx < vx0 || qx > vx1 || qy < vy0 || qy > vy1)) continue; // fora da tela: não gasta nada
-      const gone = qy < 348; // além do horizonte: some atrás das nuvens
+      const d = ((m.anim.currentTime || 0) / 1000 * m.speed) % m.LT, [sg, x, y] = whereAt(m, d);
+      const gone = CY + (x + y) / 2 - m.z < 348; // além do horizonte: some atrás das nuvens
       if (gone !== m.gone) { m.gone = gone; m.el.setAttribute('display', gone ? 'none' : 'inline'); }
       if (m.kind === 'veh') {
-        const dir = ((Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) % 8) + 8) % 8;
+        const dir = ((Math.round(Math.atan2(sg.dy, sg.dx) / (Math.PI / 4)) % 8) + 8) % 8;
         if (dir !== m.dir) {
           if (m.dir !== null) m.dirs[m.dir].setAttribute('display', 'none');
           m.dirs[dir].setAttribute('display', 'inline');
           m.dir = dir;
         }
-        m.el.setAttribute('transform', `translate(${f(x - y)},${f((x + y) / 2 - m.z)})`);
-      } else {
-        const p = P0(x, y, m.z), flip = (dx - dy) < 0;
-        m.el.setAttribute('transform', `translate(${f(p[0])},${f(p[1])}) scale(${flip ? -m.s : m.s},${m.s})`);
+        next = Math.min(next, (sg.L0 + sg.len - d) / m.speed * 1000 + 6);
       }
-      // profundidade: depois do último objeto que fica atrás
-      const me = { x0: x - m.r, x1: x + m.r, y0: y - m.r, y1: y + m.r };
-      let slot = -1;
-      for (const i of m.near) if (behind(sorted[i], me)) slot = i;
-      if (slot !== m.slot) {
-        m.slot = slot;
-        objs.insertBefore(m.el, slot + 1 < SE.length ? SE[slot + 1] : null);
+      // Enquanto a posição atual servir, não mexe: cada troca no DOM custa quadros inteiros da thread principal.
+      let [lo, hi] = range(m, x, y);
+      if (m.slot >= lo && m.slot < hi) continue;
+      // Precisa trocar: olha o trajeto à frente (uns 5 s) e fica com a posição que vai servir por mais tempo.
+      for (let k = 1; k <= 40; k++) {
+        const [, fx2, fy2] = whereAt(m, (d + k * m.speed * .12) % m.LT), [l2, h2] = range(m, fx2, fy2);
+        if (Math.max(lo, l2) >= Math.min(hi, h2)) break;
+        lo = Math.max(lo, l2); hi = Math.min(hi, h2);
       }
+      if (lo === m.slot) continue; // (objetos que se cruzam podem não deixar faixa nenhuma: fica logo depois do último que está atrás)
+      const slot = m.slot = lo, ref = slot + 1 < SE.length ? SE[slot + 1] : null;
+      // moveBefore troca de lugar sem reiniciar as animações de quem é movido (pernas, rodas)
+      if (objs.moveBefore) { try { objs.moveBefore(m.el, ref); continue; } catch (e) { /* cai no insertBefore */ } }
+      objs.insertBefore(m.el, ref);
     }
+    return Math.max(16, next);
   }
 
-  // efeitos soltos: pássaros, abelhas, carpas
-  const birds = [];
+  // efeitos soltos: pássaros, abelhas, carpas — também animados na GPU (sem laço por quadro)
+  const TAU = Math.PI * 2;
+  const fxLoop = (g, kf, durS, at = 0) => { const an = g.animate(kf, { duration: durS * 1000, iterations: Infinity }); an.currentTime = ((at % durS) + durS) % durS * 1000; loops.push(an); };
+  // revoada cruzando o mapa: vai em linha reta, com um sobe-e-desce suave (classe bird-bob)
   for (let i = 0; i < 7; i++) {
     const g = document.createElementNS(NS, 'g');
-    g.innerHTML = bird();
+    const y = i < 5 ? 120 + i * 14 : 520 + i * 30, sp = i < 5 ? -55 : 40, ph = i < 5 ? i * 22 : rr(0, 2600), sc = i < 5 ? 1 : .8;
+    g.innerHTML = `<g class="bird-bob" style="animation-delay:-${(ph % 4.8).toFixed(2)}s">${bird()}</g>`;
     fx.appendChild(g);
-    birds.push({ g, y: i < 5 ? 120 + i * 14 : 520 + i * 30, sp: i < 5 ? -55 : 40, ph: i < 5 ? i * 22 : rr(0, 2600), s: i < 5 ? 1 : .8 });
+    const span = W + 300, x0 = sp < 0 ? W + 150 : -150;
+    fxLoop(g, [{ transform: `translate(${x0}px,${y}px) scale(${sc})` }, { transform: `translate(${W - x0}px,${y}px) scale(${sc})` }], span / Math.abs(sp), (ph * 10 + T0 * Math.abs(sp)) / Math.abs(sp));
   }
-  const circlers = [];
+  // passarinhos voando em círculos sobre um lugar
   for (const fk of flocks) for (let i = 0; i < fk.n; i++) {
     const g = document.createElementNS(NS, 'g');
-    g.innerHTML = `<g class="wing" style="${neg(.35)}"><path d="M-6,0 Q-3,-4 0,0 Q3,-4 6,0" fill="none" stroke="${pick(['#5a4636', '#3b3b3b', '#7a5a3a'])}" stroke-width="1.8" stroke-linecap="round"/></g>`;
+    g.innerHTML = `<g><g class="wing" style="${neg(.35)}"><path d="M-6,0 Q-3,-4 0,0 Q3,-4 6,0" fill="none" stroke="${pick(['#5a4636', '#3b3b3b', '#7a5a3a'])}" stroke-width="1.8" stroke-linecap="round"/></g></g>`;
     fx.appendChild(g);
-    circlers.push({ g, c: fk.c, rx: fk.rx * rr(.6, 1.1), ry: fk.ry * rr(.6, 1.2), sp: rr(.35, .6) * (i % 2 ? 1 : -1), ph: rr(0, 6.28), dz: rr(-20, 20) });
+    const rx = fk.rx * rr(.6, 1.1), ry = fk.ry * rr(.6, 1.2), sp = rr(.35, .6) * (i % 2 ? 1 : -1), ph = rr(0, 6.28), dz = rr(-20, 20), N = 24;
+    fxLoop(g, Array.from({ length: N + 1 }, (_, j) => { const a = ph + Math.sign(sp) * TAU * j / N; return { transform: `translate(${f(fk.c[0] + Math.cos(a) * rx)}px,${f(fk.c[1] + dz + Math.sin(a) * ry)}px)` }; }), TAU / Math.abs(sp), rr(0, 20));
   }
-  const bees = (INVERNO ? [] : beeCenters.slice(0, 16)).map(c => { // no inverno as abelhas ficam recolhidas nas colmeias
+  // abelhas em volta das colmeias (no inverno ficam recolhidas)
+  for (const c of INVERNO ? [] : beeCenters.slice(0, 16)) {
     const g = document.createElementNS(NS, 'g');
-    g.innerHTML = `<ellipse rx="2.6" ry="1.8" fill="#f7c81e"/><path d="M-.6,-1.8 V1.8 M1,-1.6 V1.6" stroke="#222" stroke-width=".7"/><g class="bee-wing"><ellipse cx="-.4" cy="-2.6" rx="1.8" ry="1.1" fill="#fff" opacity=".9"/></g>`;
+    g.innerHTML = `<ellipse rx="2.6" ry="1.8" fill="#f7c81e"/><path d="M-.6,-1.8 V1.8 M1,-1.6 V1.6" stroke="#222" stroke-width=".7"/><ellipse cx="-.4" cy="-2.6" rx="1.8" ry="1.1" fill="#fff" opacity=".9"/>`;
     fx.appendChild(g);
-    return { g, c, rx: rr(8, 22), ry: rr(5, 12), sp: rr(1.5, 3) * (rnd() < .5 ? -1 : 1), ph: rr(0, 6.28) };
-  });
+    const rx = rr(8, 22), ry = rr(5, 12), sp = rr(1.5, 3) * (rnd() < .5 ? -1 : 1), N = 16, kf = [];
+    const at = a => `translate(${f(c[0] + Math.cos(a) * rx + Math.sin(a * 3) * 2)}px,${f(c[1] + Math.sin(a) * ry + Math.cos(a * 2) * 2)}px)`;
+    for (let j = 0; j < N; j++) { // em cada trecho da volta a abelha fica virada para onde vai
+      const a0 = Math.sign(sp) * TAU * j / N, a1 = Math.sign(sp) * TAU * (j + 1) / N, flip = Math.cos((a0 + a1) / 2) * sp > 0 ? -1 : 1;
+      kf.push({ offset: j / N, transform: `${at(a0)} scale(${flip},1)` }, { offset: (j + 1) / N, transform: `${at(a1)} scale(${flip},1)` });
+    }
+    fxLoop(g, kf, TAU / Math.abs(sp), rr(0, 6.28));
+  }
 
   const FISH = `<path d="M-14,0 Q-4,-7 8,-2 Q12,0 8,2 Q-4,7 -14,0Z" fill="#f08a24"/><path d="M-13,0 L-21,-6 L-19,0 L-21,6Z" fill="#e0701a"/><path d="M-4,-4 Q0,-1 -3,3" fill="#fff" opacity=".75"/><circle cx="5" cy="-1" r="1.2" fill="#222"/>`;
-  function splash(x, y) {
-    const g = document.createElementNS(NS, 'g');
-    g.setAttribute('transform', `translate(${f(x)},${f(y)})`);
-    g.innerHTML = `<ellipse rx="10" ry="3.5" fill="none" stroke="#fff" stroke-width="1.6"/>` + [-1, 0, 1].map(k => `<circle r="1.6" fill="#e6f7ff" data-k="${k}"/>`).join('');
-    fx.appendChild(g);
-    g.firstChild.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.8)', opacity: 0 }], { duration: 900, easing: 'ease-out' });
+  // Dois conjuntos fixos (peixe + respingo de saída + respingo de entrada), reaproveitados a cada salto:
+  // um salto só dispara animações, sem criar nem remover elementos (cada mexida no DOM custa quadros inteiros).
+  const SPLASH = `<ellipse rx="10" ry="3.5" fill="none" stroke="#fff" stroke-width="1.6" opacity="0"/>` + [-1, 0, 1].map(k => `<circle r="1.6" fill="#e6f7ff" opacity="0" data-k="${k}"/>`).join('');
+  const fishPool = [0, 1].map(() => { const g = document.createElementNS(NS, 'g'); g.innerHTML = `<g opacity="0">${FISH}</g><g>${SPLASH}</g><g>${SPLASH}</g>`; fx.appendChild(g); return g; });
+  let fishN = 0;
+  function splash(g, x, y, delay) {
+    const at = `translate(${f(x)}px,${f(y)}px)`;
+    g.firstChild.animate([{ transform: `${at} scale(.3)`, opacity: 1 }, { transform: `${at} scale(1.8)`, opacity: 0 }], { duration: 900, delay, easing: 'ease-out' });
     g.querySelectorAll('circle').forEach(c => {
       const k = +c.dataset.k;
-      c.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${k * 6}px,-9px)`, offset: .5 }, { transform: `translate(${k * 10}px,2px)`, opacity: 0 }], { duration: 600 });
+      c.animate([{ transform: at, opacity: 1 }, { transform: `translate(${f(x + k * 6)}px,${f(y - 9)}px)`, offset: .5 }, { transform: `translate(${f(x + k * 10)}px,${f(y + 2)}px)`, opacity: 0 }], { duration: 600, delay });
     });
-    setTimeout(() => g.remove(), 950);
   }
   function jumpFish() {
     const lk = pick(lakes), a = rr(0, 6.28), r = Math.sqrt(rnd());
     const [x0, y0] = P0(lk.cx + Math.cos(a) * lk.rx * r, lk.cy + Math.sin(a) * lk.ry * r);
     const dir = rnd() < .5 ? 1 : -1, dx = rr(16, 26) * dir, h = rr(22, 34), dur = rr(850, 1150);
-    const g = document.createElementNS(NS, 'g');
-    g.innerHTML = FISH;
-    fx.appendChild(g);
-    splash(x0, y0);
-    const start = performance.now();
-    (function step(now) {
-      const p = (now - start) / dur;
-      if (p >= 1) { g.remove(); splash(x0 + dx, y0); return; }
-      const ang = Math.atan2(-h * 4 * (1 - 2 * p), Math.abs(dx)) * 180 / Math.PI;
-      g.setAttribute('transform', `translate(${f(x0 + dx * p)},${f(y0 - h * 4 * p * (1 - p))}) scale(${dir * .6},.6) rotate(${f(ang)})`);
-      requestAnimationFrame(step);
-    })(start);
+    const [fish, sOut, sIn] = fishPool[fishN++ % fishPool.length].children;
+    // arco do salto: pontos da parábola, com o peixe apontando para onde vai
+    const kf = Array.from({ length: 13 }, (_, i) => {
+      const p = i / 12, ang = Math.atan2(-h * 4 * (1 - 2 * p), Math.abs(dx)) * 180 / Math.PI;
+      return { opacity: 1, transform: `translate(${f(x0 + dx * p)}px,${f(y0 - h * 4 * p * (1 - p))}px) scale(${dir * .6},.6) rotate(${f(ang)}deg)` };
+    });
+    splash(sOut, x0, y0, 0);
+    fish.animate(kf, { duration: dur });
+    splash(sIn, x0 + dx, y0, dur);
   }
 
   // Natal: Papai Noel e as renas sobrevoam a cidade de tempos em tempos
@@ -1935,14 +2006,12 @@
     const g = document.createElementNS(NS, 'g');
     g.innerHTML = `<ellipse cx="-4" cy="-10" rx="62" ry="26" fill="#fffbe6" fill-opacity=".35"/>${SANTA}`;
     fx.appendChild(g);
-    const dir = rnd() < .5 ? 1 : -1, y0 = rr(580, 720), dip = rr(220, 320), dur = rr(17000, 21000), start = performance.now();
-    (function step(now) {
-      const p = (now - start) / dur;
-      if (p >= 1) { g.remove(); return; }
-      const x = dir > 0 ? -260 + (W + 520) * p : W + 260 - (W + 520) * p;
-      g.setAttribute('transform', `translate(${f(x)},${f(y0 + Math.sin(p * Math.PI) * dip + Math.sin(p * Math.PI * 5) * 10)}) scale(${dir * 2.3},2.3)`);
-      requestAnimationFrame(step);
-    })(start);
+    const dir = rnd() < .5 ? 1 : -1, y0 = rr(580, 720), dip = rr(220, 320), dur = rr(17000, 21000), N = 60;
+    const kf = Array.from({ length: N + 1 }, (_, i) => {
+      const p = i / N, x = dir > 0 ? -260 + (W + 520) * p : W + 260 - (W + 520) * p;
+      return { transform: `translate(${f(x)}px,${f(y0 + Math.sin(p * Math.PI) * dip + Math.sin(p * Math.PI * 5) * 10)}px) scale(${dir * 2.3},2.3)` };
+    });
+    g.animate(kf, { duration: dur, fill: 'forwards' }).onfinish = () => g.remove();
   }
 
   // Final de ano: fogos de artifício subindo e estourando pelo mapa
@@ -1967,54 +2036,33 @@
     setTimeout(() => g.remove(), 2700);
   }
 
-  function fxFrame(t) {
-    for (const b of birds) {
-      const span = W + 300, x = ((b.ph * 10 + t * Math.abs(b.sp)) % span);
-      const sx = b.sp < 0 ? W + 150 - x : x - 150;
-      b.g.setAttribute('transform', `translate(${f(sx)},${f(b.y + Math.sin(t * 1.3 + b.ph) * 8)}) scale(${b.s})`);
-    }
-    for (const b of circlers) {
-      const a = t * b.sp + b.ph;
-      b.g.setAttribute('transform', `translate(${f(b.c[0] + Math.cos(a) * b.rx)},${f(b.c[1] + b.dz + Math.sin(a) * b.ry + Math.sin(t * 2 + b.ph) * 4)})`);
-    }
-    for (const b of bees) {
-      const a = t * b.sp + b.ph;
-      b.g.setAttribute('transform', `translate(${f(b.c[0] + Math.cos(a) * b.rx + Math.sin(a * 3.1) * 2)},${f(b.c[1] + Math.sin(a) * b.ry + Math.cos(a * 2.3) * 2)}) scale(${Math.cos(a) * b.sp > 0 ? -1 : 1},1)`);
-    }
+  // O mapa só se mexe enquanto está na tela (e a aba, visível): fora disso tudo pausa.
+  // Também pausa enquanto o mapa é arrastado ou beliscado (held): com as animações paradas, cada quadro
+  // do arraste sai bem mais barato e o mapa acompanha melhor o dedo.
+  // Pausa-se pela API de animações (CSS e Web Animations de uma vez): sai várias vezes mais barato do que
+  // trocar uma classe na cena, que obriga o navegador a recalcular o estilo dos milhares de elementos dela.
+  let visibleNow = false, running = true, held = false, frozen = [];
+  function sync() {
+    const on = visibleNow && document.visibilityState === 'visible' && !reduce && !held;
+    if (on === running) return;
+    running = on;
+    if (on) { for (const an of frozen) an.play(); frozen = []; }
+    else { frozen = svg.getAnimations({ subtree: true }).filter(an => an.playState === 'running'); for (const an of frozen) an.pause(); }
   }
+  new IntersectionObserver(es => { visibleNow = es[0].isIntersecting; sync(); }, { rootMargin: '100px' }).observe(wrap);
+  document.addEventListener('visibilitychange', sync);
 
-  let visibleNow = false;
-  new IntersectionObserver(es => {
-    visibleNow = es[0].isIntersecting;
-    svg.classList.toggle('paused', !visibleNow);
-  }, { rootMargin: '100px' }).observe(wrap);
-
-  let simT = 30, last = performance.now();
-  function frame(now) {
-    const dt = Math.min((now - last) / 1000, .1);
-    last = now;
-    if (visibleNow) { simT += dt; place(simT); fxFrame(simT); }
-    requestAnimationFrame(frame);
-  }
-  place(simT, true); fxFrame(simT);
+  place();
   if (!reduce) {
-    requestAnimationFrame(frame);
+    (function watch() { setTimeout(watch, running ? place() : 300); })();
     (function fishLoop() {
       if (visibleNow && document.visibilityState === 'visible') jumpFish();
-      setTimeout(fishLoop, rr(1200, 2600));
+      setTimeout(fishLoop, rr(2200, 4600));
     })();
     if (ANONOVO) (function fogos() {
       if (visibleNow && document.visibilityState === 'visible') { firework(); if (rnd() < .35) setTimeout(firework, rr(150, 450)); }
       setTimeout(fogos, rr(700, 1800));
     })();
-    // pisca-pisca de Natal: alterna os dois grupos de lâmpadas a cada 0,6 s (só troca as tintas compartilhadas)
-    if (NATAL) {
-      const A = svg.querySelectorAll('.lz-a'), B = svg.querySelectorAll('.lz-b');
-      let on = true;
-      const blink = () => { A.forEach(s => s.setAttribute('stop-opacity', on ? 1 : .3)); B.forEach(s => s.setAttribute('stop-opacity', on ? .3 : 1)); };
-      blink();
-      setInterval(() => { if (visibleNow && document.visibilityState === 'visible') { on = !on; blink(); } }, 600);
-    }
     // espera o mapa aparecer na tela para soltar o trenó; depois volta a cada meio minuto, mais ou menos
     if (NATAL) setTimeout(function santaLoop() {
       if (visibleNow && document.visibilityState === 'visible') { flySanta(); setTimeout(santaLoop, rr(24000, 32000)); }
@@ -2058,29 +2106,36 @@
   window.addEventListener('resize', resize);
   resize();
 
-  function zoomAt(k, sx, sy) { // sx,sy: ponto da cena que fica parado
+  // Movimento suave da câmera por transição de CSS: quem interpola é a GPU, então o voo sai liso mesmo
+  // com a thread principal ocupada. No fim, a cena é redesenhada nítida no novo tamanho.
+  let glideT = null;
+  function glide(ms) {
+    svg.style.transition = `transform ${ms}ms cubic-bezier(.45,0,.55,1)`;
+    apply();
+    clearTimeout(commitT); clearTimeout(glideT);
+    glideT = setTimeout(() => { glideT = null; svg.style.transition = ''; apply(true); }, ms + 40);
+  }
+  function endGlide() { // um gesto no meio do voo: vai direto ao destino
+    if (!glideT) return;
+    clearTimeout(glideT); glideT = null; svg.style.transition = ''; apply(true);
+  }
+  function zoomAt(k, sx, sy, ms = 0) { // sx,sy: ponto da cena que fica parado; ms > 0: com transição
+    if (!ms) endGlide();
     const nz = Math.max(1, Math.min(4.5, view.z * k));
     const fxp = (sx - view.x) / view.w, fyp = (sy - view.y) / view.h;
     view.z = nz; clampView();
     view.x = sx - fxp * view.w; view.y = sy - fyp * view.h;
-    clampView(); apply();
+    clampView();
+    if (ms) glide(ms); else apply();
   }
   function toScene(cx, cy) {
     const r = wrap.getBoundingClientRect();
     return [view.x + (cx - r.left) / k, view.y + (cy - r.top) / k];
   }
-  let anim = null;
   function flyTo(tx, ty, tz) {
-    const s = { x: view.x, y: view.y, z: view.z }, t0 = performance.now();
-    cancelAnimationFrame(anim);
-    (function step(now) {
-      const k = Math.min(1, (now - t0) / 900), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-      view.z = s.z + (tz - s.z) * e; clampView();
-      const ex = tx - view.w / 2, ey = ty - view.h / 2;
-      view.x = s.x + (ex - s.x) * e; view.y = s.y + (ey - s.y) * e;
-      clampView(); apply();
-      if (k < 1) anim = requestAnimationFrame(step);
-    })(t0);
+    view.z = Math.max(1, Math.min(4.5, tz)); clampView();
+    view.x = tx - view.w / 2; view.y = ty - view.h / 2;
+    clampView(); glide(900);
   }
   window.focusSpot = function (id) {
     const p = pins.find(q => q.id === id);
@@ -2090,8 +2145,8 @@
     if (el) { el.classList.add('show-label'); setTimeout(() => el.classList.remove('show-label'), 3500); }
   };
 
-  document.getElementById('zoomIn').addEventListener('click', () => zoomAt(1.5, view.x + view.w / 2, view.y + view.h / 2));
-  document.getElementById('zoomOut').addEventListener('click', () => zoomAt(1 / 1.5, view.x + view.w / 2, view.y + view.h / 2));
+  document.getElementById('zoomIn').addEventListener('click', () => zoomAt(1.5, view.x + view.w / 2, view.y + view.h / 2, 260));
+  document.getElementById('zoomOut').addEventListener('click', () => zoomAt(1 / 1.5, view.x + view.w / 2, view.y + view.h / 2, 260));
   document.getElementById('zoomReset').addEventListener('click', () => flyTo(W / 2, H - baseW() / aspect / 2, 1));
   svg.addEventListener('wheel', e => {
     if (!e.ctrlKey && !e.metaKey) return;
@@ -2099,18 +2154,19 @@
     const [sx, sy] = toScene(e.clientX, e.clientY);
     zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, sx, sy);
   }, { passive: false });
-  svg.addEventListener('dblclick', e => { const [sx, sy] = toScene(e.clientX, e.clientY); zoomAt(1.8, sx, sy); });
+  svg.addEventListener('dblclick', e => { const [sx, sy] = toScene(e.clientX, e.clientY); zoomAt(1.8, sx, sy, 260); });
 
   const ptrs = new Map();
   let drag = null, moved = false, pinch = null;
   svg.addEventListener('pointerdown', e => {
     if (e.isPrimary) { ptrs.clear(); pinch = null; } // descarta toques "presos"
+    endGlide();
     ptrs.set(e.pointerId, [e.clientX, e.clientY]);
     if (ptrs.size === 1) { drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y }; moved = false; }
     if (ptrs.size === 2) {
       const [a, b] = [...ptrs.values()];
       pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: view.z, c: toScene((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) };
-      drag = null;
+      drag = null; held = true; sync();
     }
   });
   svg.addEventListener('pointermove', e => {
@@ -2124,13 +2180,13 @@
     }
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!moved && Math.hypot(dx, dy) > 6) { moved = true; svg.setPointerCapture(e.pointerId); wrap.classList.add('dragging'); }
+    if (!moved && Math.hypot(dx, dy) > 6) { moved = true; svg.setPointerCapture(e.pointerId); wrap.classList.add('dragging'); held = true; sync(); }
     if (moved) {
       view.x = drag.vx - dx / k; view.y = drag.vy - dy / k;
       requestApply();
     }
   });
-  const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) { drag = null; wrap.classList.remove('dragging'); } };
+  const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) { drag = null; wrap.classList.remove('dragging'); if (held) { held = false; sync(); } } };
   svg.addEventListener('pointerup', up);
   svg.addEventListener('pointercancel', up);
 

@@ -9,11 +9,16 @@
 
   const menuBtn = document.getElementById('menuBtn');
   const nav = document.getElementById('nav');
-  menuBtn.addEventListener('click', () => {
-    const open = nav.classList.toggle('open');
+  const setMenu = open => {
+    nav.classList.toggle('open', open);
     menuBtn.setAttribute('aria-expanded', open);
-  });
-  nav.addEventListener('click', e => { if (e.target.tagName === 'A') nav.classList.remove('open'); });
+    menuBtn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+  };
+  menuBtn.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
+  nav.addEventListener('click', e => { if (e.target.tagName === 'A') setMenu(false); });
+  // fecha ao tocar fora ou com Esc
+  document.addEventListener('click', e => { if (nav.classList.contains('open') && !e.target.closest('#topbar')) setMenu(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.classList.contains('open')) { setMenu(false); menuBtn.focus(); } });
 
   // ---------- pétalas caindo no hero ----------
   const petals = document.getElementById('heroPetals');
@@ -110,7 +115,16 @@
     if (lastFocus) lastFocus.focus();
   }
   modal.addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (modal.hidden) return;
+    if (e.key === 'Escape') return closeModal();
+    if (e.key !== 'Tab') return;
+    // o foco fica dentro da janela enquanto ela está aberta (não escapa para a página atrás)
+    const els = [...modal.querySelectorAll('button, a[href]')].filter(el => el.offsetParent !== null);
+    const first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
   cards.addEventListener('click', e => {
     const c = e.target.closest('[data-spot]');
     if (c) openSpot(c.dataset.spot);

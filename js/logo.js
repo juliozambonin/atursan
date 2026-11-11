@@ -187,8 +187,12 @@
   // ---------- animação do vento ----------
   const AMP = [0.35, 1.4, 2.4, 3.4];
   let gust = 0, gustTarget = 0, nextGust = 3;
-  let visible = true;
-  new IntersectionObserver(es => { visible = es[0].isIntersecting; svg.classList.toggle('paused', !visible); }).observe(svg);
+  // o laço do vento só roda com o logo na tela: fora dela não pede quadros ao navegador
+  let visible = false, raf = 0;
+  new IntersectionObserver(es => {
+    visible = es[0].isIntersecting; svg.classList.toggle('paused', !visible);
+    if (visible && !raf && !reduce) raf = requestAnimationFrame(frame);
+  }).observe(svg);
 
   function wind(t) {
     if (t > nextGust) { gustTarget = rr(.6, 1.4); nextGust = t + rr(4, 9); setTimeout(() => (gustTarget = 0), rr(1200, 2500)); }
@@ -197,15 +201,15 @@
   }
 
   function frame(ms) {
-    if (visible) {
-      const t = ms / 1000;
-      const w = wind(t);
-      for (const b of branches) {
-        const ang = AMP[b.depth] * (0.65 * w + 0.35 * Math.sin(t * (1.2 + b.depth * .5) * b.speed + b.phase));
-        b.g.setAttribute('transform', `rotate(${ang.toFixed(2)} ${b.ox.toFixed(1)} ${b.oy.toFixed(1)})`);
-      }
+    raf = 0;
+    if (!visible) return;
+    const t = ms / 1000;
+    const w = wind(t);
+    for (const b of branches) {
+      const ang = AMP[b.depth] * (0.65 * w + 0.35 * Math.sin(t * (1.2 + b.depth * .5) * b.speed + b.phase));
+      b.g.setAttribute('transform', `rotate(${ang.toFixed(2)} ${b.ox.toFixed(1)} ${b.oy.toFixed(1)})`);
     }
-    requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
   }
 
   function dropPetal() {
@@ -227,8 +231,5 @@
     setTimeout(dropPetal, rr(500, 1100));
   }
 
-  if (!reduce) {
-    requestAnimationFrame(frame);
-    setTimeout(dropPetal, 2500);
-  }
+  if (!reduce) setTimeout(dropPetal, 2500);
 })();

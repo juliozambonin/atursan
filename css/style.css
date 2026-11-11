@@ -143,7 +143,9 @@ section { position: relative; }
   cursor: pointer; transition: transform .25s, box-shadow .25s; border: 0; padding: 0; text-align: left; font: inherit; color: inherit;
   display: flex; flex-direction: column;
 }
-.card:hover, .card:focus-visible { transform: translateY(-5px); box-shadow: 0 18px 40px rgba(44,58,33,.18); outline: none; }
+.card:hover, .card:focus-visible { transform: translateY(-5px); box-shadow: 0 18px 40px rgba(44,58,33,.18); }
+/* foco pelo teclado bem visível em tudo que é clicável */
+.card:focus-visible, .btn:focus-visible, .nav a:focus-visible, .map-ctrl button:focus-visible, .modal-close:focus-visible, .menu-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
 .card-media { aspect-ratio: 16 / 10; position: relative; overflow: hidden; display: grid; place-items: center; }
 .card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
 .card:hover .card-media img { transform: scale(1.05); }
@@ -248,6 +250,8 @@ section { position: relative; }
 
 /* pássaros */
 .scene .wing { animation: flap .35s ease-in-out infinite alternate; }
+.scene .bird-bob { animation: birdBob 2.4s ease-in-out infinite alternate; }
+@keyframes birdBob { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
 @keyframes flap { from { transform: scaleY(1); } to { transform: scaleY(-.5); } }
 
 /* fumaça */
@@ -271,8 +275,6 @@ section { position: relative; }
 @keyframes glow { from { opacity: .78; } to { opacity: 1; } }
 
 /* esteira e farinha */
-.scene .belt { animation: belt .6s linear infinite; }
-@keyframes belt { to { stroke-dashoffset: -16; } }
 .scene .flour { animation: flour 2.4s linear infinite; opacity: 0; }
 @keyframes flour {
   0% { transform: translate(0,0); opacity: 0; }
@@ -284,12 +286,11 @@ section { position: relative; }
 @keyframes dust { 0% { transform: scale(.3); opacity: 0; } 30% { opacity: .8; } 100% { transform: scale(2.2) translateY(-8px); opacity: 0; } }
 
 /* cachoeira */
-.scene .fall { animation: fall .7s linear infinite; }
-@keyframes fall { to { stroke-dashoffset: -40; } }
 .scene .mist { animation: mist 2.2s ease-in-out infinite alternate; }
 @keyframes mist { from { transform: scale(.85); opacity: .5; } to { transform: scale(1.2); opacity: .95; } }
-.scene .river { animation: flow 1.6s linear infinite; }
-@keyframes flow { to { stroke-dashoffset: -60; } }
+/* traços correndo (rios, cachoeiras, esteira): três cópias defasadas que se revezam — ver flowing() em scene.js */
+.scene .flow3 { animation: flow3 1s linear infinite; opacity: 0; }
+@keyframes flow3 { 0% { opacity: 0; } 8% { opacity: 1; } 33.33% { opacity: 1; } 41.33% { opacity: 0; } 100% { opacity: 0; } }
 
 /* lago */
 .scene .ripple { animation: ripple 3s ease-out infinite; opacity: 0; }
@@ -298,11 +299,8 @@ section { position: relative; }
 @keyframes bob { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(2px) rotate(2deg); } }
 
 /* pessoas caminhando */
-.scene .leg-a { animation: legA .5s ease-in-out infinite alternate; }
-.scene .leg-b { animation: legA .5s ease-in-out infinite alternate-reverse; }
-@keyframes legA { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
-.scene .walk-bob { animation: wbob .25s ease-in-out infinite alternate; }
-@keyframes wbob { to { transform: translateY(-1.2px); } }
+.scene .legs { animation: legs .5s ease-in-out infinite alternate; }
+@keyframes legs { from { transform: scaleX(1); } to { transform: scaleX(-1); } }
 .scene .steam { animation: steam 2s ease-out infinite; opacity: 0; }
 @keyframes steam { 0% { transform: translateY(0) scaleY(.6); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-10px) scaleY(1.2); opacity: 0; } }
 
@@ -325,6 +323,10 @@ section { position: relative; }
 @keyframes heart { 0% { transform: translate(0,0) scale(.4); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--hx, 10px), -110px) scale(1.1); opacity: 0; } }
 .scene .twinkle { animation: twinkle 1.6s ease-in-out infinite alternate; }
 @keyframes twinkle { from { opacity: .35; } to { opacity: 1; } }
+/* pisca-pisca de Natal: dois grupos de lâmpadas por cordão, acendendo e apagando alternados (.b) */
+.scene .pisca { animation: pisca 1.2s steps(1, end) infinite; }
+.scene .pisca.b { animation-delay: -.6s; }
+@keyframes pisca { 0% { opacity: 1; } 50% { opacity: .3; } 100% { opacity: .3; } }
 
 /* yoga */
 .scene .arms-up { animation: armsUp 6s ease-in-out infinite; }
@@ -385,23 +387,26 @@ section { position: relative; }
 .scene .hang { animation: hang 2.6s ease-in-out infinite alternate; }
 @keyframes hang { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
 /* abelhas */
-.scene .bee-wing { animation: flap .08s linear infinite alternate; }
 
 /* marcadores (pins) e destaque dos atrativos */
 .scene [data-spot] { cursor: pointer; }
 .scene #objs .hl { filter: brightness(1.1); }
 .scene .pin-g:focus { outline: none; }
-.scene .pin { animation: pinBob 2.2s ease-in-out infinite; }
+.scene .pin-g:focus-visible .pin-head path { stroke: #2c3a21; stroke-width: 4.5; } /* marcador em foco pelo teclado: contorno escuro */
+.scene .pin-bob { animation: pinBob 2.2s ease-in-out infinite; }
 @keyframes pinBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .scene .pin-label { opacity: 0; transition: opacity .25s, transform .25s; transform: translateY(6px); pointer-events: none; }
 .scene .pin-g:hover .pin-label, .scene .pin-g:focus .pin-label, .scene .pin-g.show-label .pin-label, .scene .pin-g.hl .pin-label { opacity: 1; transform: none; }
 .scene .pin-head { transition: transform .2s; transform-box: fill-box; transform-origin: 50% 100%; }
 .scene .pin-g:hover .pin-head, .scene .pin-g.hl .pin-head { transform: scale(1.15); }
 
-.scene.paused *, .logo.paused * { animation-play-state: paused !important; }
+/* (o mapa pausa pela API de animações, em scene.js) */
+.logo.paused * { animation-play-state: paused !important; }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .scene *, .logo .lg-bird, .hero-petal { animation: none !important; }
+  .scene .flow3.k0 { opacity: 1; }
   .logo .lg-ring { stroke-dashoffset: 0; }
   .logo .lg-tree { transform: none; }
   .logo .lg-t, .logo .lg-land, .hero-actions, .scroll-cue { opacity: 1; }
